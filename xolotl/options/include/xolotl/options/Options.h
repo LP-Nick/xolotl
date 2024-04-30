@@ -350,6 +350,11 @@ protected:
 	 * Value of the remaining cascade efficiency.
 	 */
 	double cascadeEfficiency;
+	
+	double dislocationDensity;
+	/**
+	* Concentration of network dislocations in Zr lattice
+	*/
 
 public:
 	/**
@@ -1010,6 +1015,11 @@ public:
 	getCascadeEfficiency() const override
 	{
 		return cascadeEfficiency;
+	}
+	virtual double
+	getDislocationDensity() const override
+	{
+		return dislocationDensity;
 	}
 
 protected:

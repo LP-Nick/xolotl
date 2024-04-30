@@ -84,7 +84,8 @@ Options::Options() :
 	basalPortion(0.1),
 	transitionSize(325),
 	cascadeDose(-1.0),
-	cascadeEfficiency(0.0)
+	cascadeEfficiency(0.0),
+	dislocationDensity(9.5e-8)
 {
 }
 
