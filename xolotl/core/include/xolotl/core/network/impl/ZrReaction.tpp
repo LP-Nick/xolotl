@@ -299,14 +299,17 @@ ZrSinkReaction::computeRate(IndexType gridIndex, double time)
 	double dc = cl.getDiffusionCoefficient(gridIndex);
 	double anisotropy =
 		this->_clusterData->extraData.anisotropyRatio(_reactant, gridIndex);
+	double dislocationDensity = this->_clusterData->dislocationDensity();
+	double alphaZrASinkStrength = dislocationDensity*0.7631579; //fraction of total dislocation density for type A dislocations from single crystal data (7.25/9.5)
+	double alphaZrCSinkStrength = dislocationDensity*0.2368421;
 
 	auto clReg = cl.getRegion();
 	Composition lo = clReg.getOrigin();
 
 	if (lo.isOnAxis(Species::V)) {
 		return dc * 1.0 *
-			(::xolotl::core::alphaZrCSinkStrength * anisotropy +
-				::xolotl::core::alphaZrASinkStrength /
+			(alphaZrCSinkStrength * anisotropy +
+				alphaZrASinkStrength /
 					(anisotropy * anisotropy));
 	}
 
@@ -315,12 +318,12 @@ ZrSinkReaction::computeRate(IndexType gridIndex, double time)
 	else if (lo.isOnAxis(Species::I)) {
 		if (lo[Species::I] < 9) {
 			return dc * 1.1 *
-				(::xolotl::core::alphaZrCSinkStrength * anisotropy +
-					::xolotl::core::alphaZrASinkStrength /
+				(alphaZrCSinkStrength * anisotropy +
+					alphaZrASinkStrength /
 						(anisotropy * anisotropy));
 		}
 		else if (lo[Species::I] == 9) {
-			return dc * 1.1 * (::xolotl::core::alphaZrASinkStrength);
+			return dc * 1.1 * (alphaZrASinkStrength);
 		}
 	}
 
