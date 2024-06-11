@@ -384,6 +384,49 @@ public:
 	writeMonitorDataLine(const std::vector<double>& localData, double time) = 0;
 
 	/**
+	 * @brief Return a string file name to be used for monitor output
+	 */
+	virtual std::string
+	getRxnOutputFileName() const = 0;
+
+	/**
+	 * @brief Return a string of cluster name in ID order.
+	 */
+	virtual std::string
+	getRxnDataHeaderString() const = 0;
+
+	/**
+	 * @brief Compute a list of data values for each species in ID order
+	 */
+	virtual std::vector<double>
+	getRxnDataValues(Kokkos::View<const double*> conc) = 0;
+
+	/**
+	 * @brief Add data values to elements of given output vector
+	 */
+	virtual void
+	addRxnDataValues(Kokkos::View<const double*> conc,
+		std::vector<double>& totalVals) = 0;
+
+	/**
+	 * @brief Get number of data values (excluding time)
+	 */
+	virtual std::size_t
+	getRxnDataLineSize() const = 0;
+
+	/**
+	 * @brief Open output file and write header comment line
+	 */
+	virtual void
+	writeRxnOutputHeader() const = 0;
+
+	/**
+	 * @brief Append line of data values to Rxn output file
+	 */
+	virtual void
+	writeRxnDataLine(const std::vector<double>& localData, double time) = 0;
+
+	/**
 	 * @brief Computes the map between the different cluster bounds and moment
 	 * IDs.
 	 */
@@ -473,6 +516,22 @@ public:
 	 */
 	virtual double
 	getLeftSideRate(ConcentrationsView concentrations, IndexType clusterId,
+		IndexType gridIndex) = 0;
+
+	virtual double
+	getTableOne(ConcentrationsView concentrations, IndexType clusterId,
+		IndexType gridIndex) = 0;
+
+	virtual double
+	getTableTwo(ConcentrationsView concentrations, IndexType clusterId,
+		IndexType gridIndex) = 0;
+
+	virtual double
+	getTableThree(ConcentrationsView concentrations, IndexType clusterId,
+		IndexType gridIndex) = 0;
+
+	virtual double
+	getTableFour(ConcentrationsView concentrations, IndexType clusterId,
 		IndexType gridIndex) = 0;
 
 	/**

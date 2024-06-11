@@ -545,6 +545,7 @@ XolotlInterface::outputData(double time,
 
 	if (time == 0.0 and procId == 0) {
 		network.writeMonitorOutputHeader();
+		network.writeRxnOutputHeader();
 	}
 
 	auto myData = std::vector<double>(network.getMonitorDataLineSize(), 0.0);
@@ -564,9 +565,11 @@ XolotlInterface::outputData(double time,
 		deep_copy(dConcs, hConcs);
 
 		network.addMonitorDataValues(dConcs, 1.0, myData);
+		network.addRxnDataValues(dConcs,myData);
 	}
 
 	network.writeMonitorDataLine(myData, time);
+	network.writeRxnDataLine(myData, time);
 }
 CATCH
 

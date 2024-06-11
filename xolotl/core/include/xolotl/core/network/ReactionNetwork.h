@@ -292,6 +292,53 @@ public:
 		throw util::NotImplementedError();
 	}
 
+	[[noreturn]] std::string
+	getRxnOutputFileName() const override
+	{
+		throw util::NotImplementedError();
+	}
+	
+	[[noreturn]] std::string
+	getRxnDataHeaderString() const override
+	{
+		throw util::NotImplementedError();
+	}
+
+	std::vector<double>
+	getRxnDataValues(Kokkos::View<const double*> conc) override
+	{
+		auto ret = std::vector<double>(getRxnDataLineSize(), 0.0);
+		addRxnDataValues(conc, ret);
+		return ret;
+	}
+
+	void
+	addRxnDataValues(Kokkos::View<const double*> conc,
+		std::vector<double>& totalVals) override
+	{
+		throw util::NotImplementedError();
+	}
+
+	[[noreturn]] std::size_t
+	getRxnDataLineSize() const override
+	{
+		throw util::NotImplementedError();
+	}
+
+	void
+	writeRxnOutputHeader() const override
+	{
+		std::ofstream(this->getRxnOutputFileName())
+			<< this->getRxnDataHeaderString() << std::endl;
+	}
+
+	void
+	writeRxnDataLine(
+		const std::vector<double>& localData, double time) override
+	{
+		throw util::NotImplementedError();
+	}
+	
 	std::uint64_t
 	getDeviceMemorySize() const noexcept override;
 
@@ -549,6 +596,22 @@ public:
 
 	double
 	getLeftSideRate(ConcentrationsView concentrations, IndexType clusterId,
+		IndexType gridIndex) override;
+
+	double
+	getTableOne(ConcentrationsView concentrations, IndexType clusterId,
+		IndexType gridIndex) override;
+		
+	double
+	getTableTwo(ConcentrationsView concentrations, IndexType clusterId,
+		IndexType gridIndex) override;
+		
+	double
+	getTableThree(ConcentrationsView concentrations, IndexType clusterId,
+		IndexType gridIndex) override;
+		
+	double
+	getTableFour(ConcentrationsView concentrations, IndexType clusterId,
 		IndexType gridIndex) override;
 
 	IndexType

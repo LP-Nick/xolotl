@@ -113,6 +113,16 @@ computeAlphaZr(
 }
 
 PetscErrorCode
+computeAlphaZrRxn(
+	TS ts, PetscInt timestep, PetscReal time, Vec solution, void* ictx)
+{
+	PetscFunctionBeginUser;
+	PetscCall(static_cast<IPetscMonitor*>(ictx)->computeAlphaZrRxn(
+		ts, timestep, time, solution));
+	PetscFunctionReturn(0);
+}
+
+PetscErrorCode
 computeAlloy(TS ts, PetscInt timestep, PetscReal time, Vec solution, void* ictx)
 {
 	PetscFunctionBeginUser;
@@ -356,6 +366,13 @@ PetscMonitor::computeHeliumRetention(
 
 PetscErrorCode
 PetscMonitor::computeAlphaZr(
+	TS ts, PetscInt timestep, PetscReal time, Vec solution)
+{
+	PetscFunctionReturn(0);
+}
+
+PetscErrorCode
+PetscMonitor::computeAlphaZrRxn(
 	TS ts, PetscInt timestep, PetscReal time, Vec solution)
 {
 	PetscFunctionReturn(0);

@@ -203,6 +203,7 @@ TrapMutationReaction<TNetwork, TDerived>::computeLeftSideRate(
 {
 	return 0.0;
 }
+
 } // namespace network
 } // namespace core
 } // namespace xolotl

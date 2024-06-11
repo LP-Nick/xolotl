@@ -78,6 +78,29 @@ public:
 	writeMonitorDataLine(
 		const std::vector<double>& localData, double time) override;
 
+	std::string
+	getRxnOutputFileName() const override
+	{
+		return "Rxn.dat";
+	}
+
+	std::string
+	getRxnDataHeaderString() const override;
+
+	void
+	addRxnDataValues(Kokkos::View<const double*> conc,
+		std::vector<double>& totalVals) override;
+
+	std::size_t
+	getRxnDataLineSize() const override
+	{
+		return _numClusters * 8;
+	}
+
+	void
+	writeRxnDataLine(
+		const std::vector<double>& localData, double time) override;
+
 private:
 	double
 	checkLatticeParameter(double latticeParameter);

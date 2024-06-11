@@ -1838,6 +1838,38 @@ ProductionReaction<TNetwork, TDerived>::computeLeftSideRate(
 
 template <typename TNetwork, typename TDerived>
 KOKKOS_INLINE_FUNCTION
+double
+ProductionReaction<TNetwork, TDerived>::computeTableOne(
+	ConcentrationsView concentrations, IndexType clusterId, IndexType gridIndex)
+{
+	// Check if our cluster is on the right side of this reaction
+	if (clusterId == _products[0] || clusterId == _products[1]) {
+		return this->_rate(gridIndex) * concentrations[_reactants[1]] *
+			this->_coefs(0, 0, 0, 0) * concentrations[_reactants[0]];
+	}
+	
+	// This cluster is not a  product of the reaction
+	return 0.0;
+}
+
+template <typename TNetwork, typename TDerived>
+KOKKOS_INLINE_FUNCTION
+double
+ProductionReaction<TNetwork, TDerived>::computeTableTwo(
+	ConcentrationsView concentrations, IndexType clusterId, IndexType gridIndex)
+{
+	// Check if our cluster is on the left side of this reaction
+	if (clusterId == _reactants[0] || clusterId == _reactants[1]) {
+		return this->_rate(gridIndex) * concentrations[_reactants[1]] *
+			this->_coefs(0, 0, 0, 0) * concentrations[_reactants[0]];
+	}
+
+	// This cluster is not part of the reaction
+	return 0.0;
+}
+
+template <typename TNetwork, typename TDerived>
+KOKKOS_INLINE_FUNCTION
 void
 ProductionReaction<TNetwork, TDerived>::mapJacobianEntries(
 	Connectivity connectivity)
@@ -2996,6 +3028,38 @@ DissociationReaction<TNetwork, TDerived>::computeLeftSideRate(
 	// Check if our cluster is on the left side of this reaction
 	if (clusterId == _reactant) {
 		return this->_rate(gridIndex) * this->_coefs(0, 0, 0, 0);
+	}
+
+	// This cluster is not part of the reaction
+	return 0.0;
+}
+
+template <typename TNetwork, typename TDerived>
+KOKKOS_INLINE_FUNCTION
+double
+DissociationReaction<TNetwork, TDerived>::computeTableThree(
+	ConcentrationsView concentrations, IndexType clusterId, IndexType gridIndex)
+{
+	// Check if our cluster is on the right side of this reaction
+	if (clusterId == _products[0] || clusterId == _products[1]) {
+		return this->_rate(gridIndex) * concentrations[_reactant] * 
+						this->_coefs(0, 0, 0, 0);
+	}
+
+	// This cluster is not part of the reaction
+	return 0.0;
+}
+
+template <typename TNetwork, typename TDerived>
+KOKKOS_INLINE_FUNCTION
+double
+DissociationReaction<TNetwork, TDerived>::computeTableFour(
+	ConcentrationsView concentrations, IndexType clusterId, IndexType gridIndex)
+{
+	// Check if our cluster is on the left side of this reaction
+	if (clusterId == _reactant) {
+		return this->_rate(gridIndex) * concentrations[_reactant] * 
+						this->_coefs(0, 0, 0, 0);
 	}
 
 	// This cluster is not part of the reaction

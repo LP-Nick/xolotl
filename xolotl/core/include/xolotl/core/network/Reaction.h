@@ -168,6 +168,42 @@ public:
 	}
 
 	KOKKOS_INLINE_FUNCTION
+	double
+	contributeTableOne(ConcentrationsView concentrations,
+		IndexType clusterId, IndexType gridIndex)
+	{
+		return asDerived()->computeTableOne(
+			concentrations, clusterId, gridIndex);
+	}
+	
+	KOKKOS_INLINE_FUNCTION
+	double
+	contributeTableTwo(ConcentrationsView concentrations,
+		IndexType clusterId, IndexType gridIndex)
+	{
+		return asDerived()->computeTableTwo(
+			concentrations, clusterId, gridIndex);
+	}
+	
+	KOKKOS_INLINE_FUNCTION
+	double
+	contributeTableThree(ConcentrationsView concentrations,
+		IndexType clusterId, IndexType gridIndex)
+	{
+		return asDerived()->computeTableThree(
+			concentrations, clusterId, gridIndex);
+	}
+	
+	KOKKOS_INLINE_FUNCTION
+	double
+	contributeTableFour(ConcentrationsView concentrations,
+		IndexType clusterId, IndexType gridIndex)
+	{
+		return asDerived()->computeTableFour(
+			concentrations, clusterId, gridIndex);
+	}
+
+	KOKKOS_INLINE_FUNCTION
 	void
 	defineJacobianEntries(Connectivity connectivity)
 	{
@@ -385,6 +421,26 @@ private:
 		IndexType gridIndex);
 
 	KOKKOS_INLINE_FUNCTION
+	double
+	computeTableOne(ConcentrationsView concentrations, IndexType clusterId,
+		IndexType gridIndex);
+
+	KOKKOS_INLINE_FUNCTION
+	double
+	computeTableTwo(ConcentrationsView concentrations, IndexType clusterId,
+		IndexType gridIndex);
+
+	KOKKOS_INLINE_FUNCTION
+	double
+	computeTableThree(ConcentrationsView concentrations, IndexType clusterId,
+		IndexType gridIndex){return 0.0;}
+
+	KOKKOS_INLINE_FUNCTION
+	double
+	computeTableFour(ConcentrationsView concentrations, IndexType clusterId,
+		IndexType gridIndex){return 0.0;}
+
+	KOKKOS_INLINE_FUNCTION
 	void
 	mapJacobianEntries(Connectivity connectivity);
 
@@ -510,6 +566,26 @@ private:
 	KOKKOS_INLINE_FUNCTION
 	double
 	computeLeftSideRate(ConcentrationsView concentrations, IndexType clusterId,
+		IndexType gridIndex);
+
+	KOKKOS_INLINE_FUNCTION
+	double
+	computeTableOne(ConcentrationsView concentrations, IndexType clusterId,
+		IndexType gridIndex){return 0.0;}
+
+	KOKKOS_INLINE_FUNCTION
+	double
+	computeTableTwo(ConcentrationsView concentrations, IndexType clusterId,
+		IndexType gridIndex){return 0.0;}
+
+	KOKKOS_INLINE_FUNCTION
+	double
+	computeTableThree(ConcentrationsView concentrations, IndexType clusterId,
+		IndexType gridIndex);
+
+	KOKKOS_INLINE_FUNCTION
+	double
+	computeTableFour(ConcentrationsView concentrations, IndexType clusterId,
 		IndexType gridIndex);
 
 	KOKKOS_INLINE_FUNCTION

@@ -323,6 +323,38 @@ private:
 	}
 
 	KOKKOS_INLINE_FUNCTION
+	double
+	computeTableOne(ConcentrationsView concentrations, IndexType clusterId,
+		IndexType gridIndex)
+	{
+		return 0.0;
+	}
+
+	KOKKOS_INLINE_FUNCTION
+	double
+	computeTableTwo(ConcentrationsView concentrations, IndexType clusterId,
+		IndexType gridIndex)
+	{
+		return 0.0;
+	}
+
+	KOKKOS_INLINE_FUNCTION
+	double
+	computeTableThree(ConcentrationsView concentrations, IndexType clusterId,
+		IndexType gridIndex)
+	{
+		return 0.0;
+	}
+
+	KOKKOS_INLINE_FUNCTION
+	double
+	computeTableFour(ConcentrationsView concentrations, IndexType clusterId,
+		IndexType gridIndex)
+	{
+		return 0.0;
+	}
+
+	KOKKOS_INLINE_FUNCTION
 	void
 	mapJacobianEntries(Connectivity connectivity)
 	{

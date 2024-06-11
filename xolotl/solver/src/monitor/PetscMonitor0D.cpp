@@ -145,6 +145,13 @@ PetscMonitor0D::setup(int loop)
 		// computeAlphaZr will be called at each timestep
 		PetscCallVoid(
 			TSMonitorSet(_ts, monitor::computeAlphaZr, this, nullptr));
+		
+		_solverHandler->getNetwork().writeRxnOutputHeader();
+		
+		// computeAlphaZrRxn will be called at each timestep
+		PetscCallVoid(
+			TSMonitorSet(_ts, monitor::computeAlphaZrRxn, this, nullptr));
+
 	}
 
 	// Set the monitor to compute the xenon content
@@ -246,6 +253,7 @@ PetscMonitor0D::setup(int loop)
 
 		// startStop0D will be called at each timestep
 		PetscCallVoid(TSMonitorSet(_ts, monitor::startStop, this, nullptr));
+		
 	}
 
 	// Set the monitor to simply change the previous time to the new time
@@ -488,6 +496,43 @@ PetscMonitor0D::computeAlphaZr(
 	auto myData = network.getMonitorDataValues(concOffset, 1.0);
 
 	network.writeMonitorDataLine(myData, time);
+
+	// Restore the PETSc solution array
+	PetscCall(DMDAVecRestoreKokkosOffsetViewDOF(da, solution, &concs));
+
+	PetscFunctionReturn(0);
+}
+
+PetscErrorCode
+PetscMonitor0D::computeAlphaZrRxn(
+	TS ts, PetscInt timestep, PetscReal time, Vec solution)
+{
+	PetscFunctionBeginUser;
+	
+	// Compute the dt
+	double previousTime = _solverHandler->getPreviousTime();
+	double dt = time - previousTime;
+
+	// Don't do anything if it is not on the stride
+	if (((PetscInt)((time + dt / 10.0) / _hdf5Stride) <= _hdf5Previous) &&
+		timestep > 0)
+		PetscFunctionReturn(0);
+	
+	// Get the da from ts
+	DM da;
+	PetscCall(TSGetDM(ts, &da));
+
+	// Get the array of concentration
+	PetscOffsetView<const PetscScalar**> concs;
+	PetscCall(DMDAVecGetKokkosOffsetViewDOF(da, solution, &concs));
+	auto concOffset = subview(concs, 0, Kokkos::ALL).view();
+
+	using NetworkType = core::network::ZrReactionNetwork;
+	auto& network = dynamic_cast<NetworkType&>(_solverHandler->getNetwork());
+
+	auto myData = network.getRxnDataValues(concOffset);
+
+	network.writeRxnDataLine(myData, time);
 
 	// Restore the PETSc solution array
 	PetscCall(DMDAVecRestoreKokkosOffsetViewDOF(da, solution, &concs));

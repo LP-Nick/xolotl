@@ -629,6 +629,82 @@ ReactionNetwork<TImpl>::getLeftSideRate(
 	return leftSideRate;
 }
 
+template <typename TImpl>
+double
+ReactionNetwork<TImpl>::getTableOne(
+	ConcentrationsView concentrations, IndexType clusterId, IndexType gridIndex)
+{
+	// Get the extent of the reactions
+	double TableOne = 0.0;
+	// Loop on all the rates to get the maximum
+	_reactions.reduce(
+		"ReactionNetwork::getTableOne",
+		DEVICE_LAMBDA(auto&& reaction, double& lsum) {
+			lsum += reaction.contributeTableOne(
+				concentrations, clusterId, gridIndex);
+		},
+		TableOne);
+
+	return TableOne;
+}
+
+template <typename TImpl>
+double
+ReactionNetwork<TImpl>::getTableTwo(
+	ConcentrationsView concentrations, IndexType clusterId, IndexType gridIndex)
+{
+	// Get the extent of the reactions
+	double TableTwo = 0.0;
+	// Loop on all the rates to get the maximum
+	_reactions.reduce(
+		"ReactionNetwork::getTableTwo",
+		DEVICE_LAMBDA(auto&& reaction, double& lsum) {
+			lsum += reaction.contributeTableTwo(
+				concentrations, clusterId, gridIndex);
+		},
+		TableTwo);
+
+	return -TableTwo;
+}
+
+template <typename TImpl>
+double
+ReactionNetwork<TImpl>::getTableThree(
+	ConcentrationsView concentrations, IndexType clusterId, IndexType gridIndex)
+{
+	// Get the extent of the reactions
+	double TableThree = 0.0;
+	// Loop on all the rates to get the maximum
+	_reactions.reduce(
+		"ReactionNetwork::getTableThree",
+		DEVICE_LAMBDA(auto&& reaction, double& lsum) {
+			lsum += reaction.contributeTableThree(
+				concentrations, clusterId, gridIndex);
+		},
+		TableThree);
+
+	return TableThree;
+}
+
+template <typename TImpl>
+double
+ReactionNetwork<TImpl>::getTableFour(
+	ConcentrationsView concentrations, IndexType clusterId, IndexType gridIndex)
+{
+	// Get the extent of the reactions
+	double TableFour = 0.0;
+	// Loop on all the rates to get the maximum
+	_reactions.reduce(
+		"ReactionNetwork::getTableFour",
+		DEVICE_LAMBDA(auto&& reaction, double& lsum) {
+			lsum += reaction.contributeTableFour(
+				concentrations, clusterId, gridIndex);
+		},
+		TableFour);
+
+	return -TableFour;
+}
+
 template <typename TReactionNetwork, typename TDerived>
 struct TQMethodBase
 {

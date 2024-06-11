@@ -310,6 +310,97 @@ ZrReactionNetwork::writeMonitorDataLine(
 		outputFile.close();
 	}
 }
+
+std::string
+ZrReactionNetwork::getRxnDataHeaderString() const
+{
+	std::stringstream header;
+
+	header << "vac_size "<<"basal_size "<<"int_size "
+	<<"conc "<<"table_1 "<<"table_2 "<<"table_3 "<<"table_4 ";
+	
+	
+
+	return header.str();
+}
+
+void
+ZrReactionNetwork::addRxnDataValues(Kokkos::View<const double*> conc, 
+				std::vector<double>& totalVals)
+{
+		
+		auto data = this->_clusterData.h_view();
+		/*Kokkos::parallel_for(
+		this->_numClusters, KOKKOS_LAMBDA(const IndexType i) {*/
+		
+		for (auto i = 0; i<_numClusters;i++){
+			auto cluster = data.getCluster(i);
+			const auto& reg = cluster.getRegion();
+			Composition lo(reg.getOrigin());
+				
+						
+			totalVals[(8*i)+0] = (lo.isOnAxis(Species::V)) ? lo[Species::V] : 0;
+			totalVals[(8*i)+1] = (lo.isOnAxis(Species::Basal)) ? lo[Species::Basal] : 0;
+			totalVals[(8*i)+2] = (lo.isOnAxis(Species::I)) ? lo[Species::I] : 0;
+			totalVals[(8*i)+3] = conc(i);
+			totalVals[(8*i)+4] = getTableOne(conc, i, 0);
+			totalVals[(8*i)+5] = getTableTwo(conc, i, 0);
+			totalVals[(8*i)+6] = getTableThree(conc, i, 0);
+			totalVals[(8*i)+7] = getTableFour(conc, i, 0);
+		
+	};
+}
+
+void
+ZrReactionNetwork::writeRxnDataLine(
+	const std::vector<double>& localData, double time)
+{
+	/*auto numSpecies = getSpeciesListSize();
+
+	// Sum all the concentrations through MPI reduce
+	auto globalData = std::vector<double>(localData.size(), 0.0);
+	MPI_Reduce(localData.data(), globalData.data(), localData.size(),
+		MPI_DOUBLE, MPI_SUM, 0, util::getMPIComm());
+
+	if (util::getMPIRank() == 0) {
+		// Average the data
+		for (auto i = 0; i < numSpecies; ++i) {
+			auto id = [i](std::size_t n) { return 6 * i + n; };
+			if (globalData[id(0)] > 1.0e-16) {
+				globalData[id(2)] /= globalData[id(0)];
+			}
+			if (globalData[id(3)] > 1.0e-16) {
+				globalData[id(5)] /= globalData[id(3)];
+			}
+		}
+	*/
+		// Set the output precision
+		const int outputPrecision = 5;
+
+		// Open the output file
+		std::fstream outputFile;
+		outputFile.open(
+			getRxnOutputFileName(), std::fstream::out | std::fstream::app);
+		outputFile << std::setprecision(outputPrecision);
+
+		// Output the data
+		outputFile << "time: "<<time << std::endl;
+		for (auto i = 0; i < _numClusters; i++) {
+			unsigned long int vSize = (localData[8*i+0]);
+			unsigned long int bSize = (localData[8*i+1]);
+			unsigned long int iSize = (localData[8*i+2]);
+			outputFile << vSize << " " << bSize << " "
+					   << iSize <<" "<< localData[8*i+3] << " "
+					   << localData[8*i+4] << " "<< localData[8*i+5] << " "
+						 << localData[8*i+6]<<" "<<localData[8*i+7]  << " "<< std::endl;
+		}
+		
+
+		// Close the output file
+		outputFile.close();
+	
+}
+
 } // namespace network
 } // namespace core
 } // namespace xolotl
