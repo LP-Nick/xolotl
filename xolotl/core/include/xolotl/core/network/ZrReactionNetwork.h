@@ -89,17 +89,17 @@ public:
 
 	void
 	addRxnDataValues(Kokkos::View<const double*> conc,
-		std::vector<double>& totalVals) override;
+		std::vector<std::vector<double>>& totalVals) override;
 
 	std::size_t
 	getRxnDataLineSize() const override
 	{
-		return _numClusters * 8;
+		return 34;
 	}
 
 	void
 	writeRxnDataLine(
-		const std::vector<double>& localData, double time) override;
+		const std::vector<std::vector<double>>& localData, double time) override;
 
 private:
 	double

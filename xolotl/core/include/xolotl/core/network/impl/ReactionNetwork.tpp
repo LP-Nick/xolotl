@@ -630,79 +630,71 @@ ReactionNetwork<TImpl>::getLeftSideRate(
 }
 
 template <typename TImpl>
-double
+std::vector<std::vector<double>>
 ReactionNetwork<TImpl>::getTableOne(
-	ConcentrationsView concentrations, IndexType clusterId, IndexType gridIndex)
+	ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins, IndexType gridIndex)
 {
-	// Get the extent of the reactions
-	double TableOne = 0.0;
-	// Loop on all the rates to get the maximum
-	_reactions.reduce(
-		"ReactionNetwork::getTableOne",
-		DEVICE_LAMBDA(auto&& reaction, double& lsum) {
-			lsum += reaction.contributeTableOne(
-				concentrations, clusterId, gridIndex);
-		},
-		TableOne);
-
-	return TableOne;
+	// Set up vector for rates of TableOne reactions
+	std::vector<std::vector<double>> rates (8, std::vector<double> (8,0));
+	
+	// Loop on all the rates
+	_reactions.forEach(
+		"ReactionNetwork::getTableOne",DEVICE_LAMBDA(auto&& reaction) {
+			reaction.contributeTableOne(concentrations, clusterBins, rates, gridIndex);
+		});
+	Kokkos::fence();
+	return rates;
 }
 
 template <typename TImpl>
-double
+std::vector<std::vector<double>>
 ReactionNetwork<TImpl>::getTableTwo(
-	ConcentrationsView concentrations, IndexType clusterId, IndexType gridIndex)
+	ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins, IndexType gridIndex)
 {
-	// Get the extent of the reactions
-	double TableTwo = 0.0;
-	// Loop on all the rates to get the maximum
-	_reactions.reduce(
-		"ReactionNetwork::getTableTwo",
-		DEVICE_LAMBDA(auto&& reaction, double& lsum) {
-			lsum += reaction.contributeTableTwo(
-				concentrations, clusterId, gridIndex);
-		},
-		TableTwo);
-
-	return -TableTwo;
+	// Set up vector for rates of TableTwo reactions
+	std::vector<std::vector<double>> rates (8, std::vector<double> (8,0));
+	
+	// Loop on all the rates
+	_reactions.forEach(
+		"ReactionNetwork::getTableTwo",DEVICE_LAMBDA(auto&& reaction) {
+			reaction.contributeTableTwo(concentrations, clusterBins, rates, gridIndex);
+		});
+	Kokkos::fence();
+	return rates;
 }
 
 template <typename TImpl>
-double
+std::vector<std::vector<double>>
 ReactionNetwork<TImpl>::getTableThree(
-	ConcentrationsView concentrations, IndexType clusterId, IndexType gridIndex)
+	ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins, IndexType gridIndex)
 {
-	// Get the extent of the reactions
-	double TableThree = 0.0;
-	// Loop on all the rates to get the maximum
-	_reactions.reduce(
-		"ReactionNetwork::getTableThree",
-		DEVICE_LAMBDA(auto&& reaction, double& lsum) {
-			lsum += reaction.contributeTableThree(
-				concentrations, clusterId, gridIndex);
-		},
-		TableThree);
-
-	return TableThree;
+	// Set up vector for rates of TableThree reactions
+	std::vector<std::vector<double>> rates (8, std::vector<double> (8,0));
+	
+	// Loop on all the rates
+	_reactions.forEach(
+		"ReactionNetwork::getTableThree",DEVICE_LAMBDA(auto&& reaction) {
+			reaction.contributeTableThree(concentrations, clusterBins, rates, gridIndex);
+		});
+	Kokkos::fence();
+	return rates;
 }
 
 template <typename TImpl>
-double
+std::vector<std::vector<double>>
 ReactionNetwork<TImpl>::getTableFour(
-	ConcentrationsView concentrations, IndexType clusterId, IndexType gridIndex)
+	ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins, IndexType gridIndex)
 {
-	// Get the extent of the reactions
-	double TableFour = 0.0;
-	// Loop on all the rates to get the maximum
-	_reactions.reduce(
-		"ReactionNetwork::getTableFour",
-		DEVICE_LAMBDA(auto&& reaction, double& lsum) {
-			lsum += reaction.contributeTableFour(
-				concentrations, clusterId, gridIndex);
-		},
-		TableFour);
-
-	return -TableFour;
+	// Set up vector for rates of TableFour reactions
+	std::vector<std::vector<double>> rates (8, std::vector<double> (8,0));
+	
+	// Loop on all the rates
+	_reactions.forEach(
+		"ReactionNetwork::getTableFour",DEVICE_LAMBDA(auto&& reaction) {
+			reaction.contributeTableOne(concentrations, clusterBins, rates, gridIndex);
+		});
+	Kokkos::fence();
+	return rates;
 }
 
 template <typename TReactionNetwork, typename TDerived>

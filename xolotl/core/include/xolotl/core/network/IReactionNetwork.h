@@ -398,7 +398,7 @@ public:
 	/**
 	 * @brief Compute a list of data values for each species in ID order
 	 */
-	virtual std::vector<double>
+	virtual std::vector<std::vector<double>>
 	getRxnDataValues(Kokkos::View<const double*> conc) = 0;
 
 	/**
@@ -406,7 +406,7 @@ public:
 	 */
 	virtual void
 	addRxnDataValues(Kokkos::View<const double*> conc,
-		std::vector<double>& totalVals) = 0;
+		std::vector<std::vector<double>>& totalVals) = 0;
 
 	/**
 	 * @brief Get number of data values (excluding time)
@@ -424,7 +424,7 @@ public:
 	 * @brief Append line of data values to Rxn output file
 	 */
 	virtual void
-	writeRxnDataLine(const std::vector<double>& localData, double time) = 0;
+	writeRxnDataLine(const std::vector<std::vector<double>>& localData, double time) = 0;
 
 	/**
 	 * @brief Computes the map between the different cluster bounds and moment
@@ -518,21 +518,21 @@ public:
 	getLeftSideRate(ConcentrationsView concentrations, IndexType clusterId,
 		IndexType gridIndex) = 0;
 
-	virtual double
-	getTableOne(ConcentrationsView concentrations, IndexType clusterId,
+	virtual std::vector<std::vector<double>>
+	getTableOne(ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins,
 		IndexType gridIndex) = 0;
 
-	virtual double
-	getTableTwo(ConcentrationsView concentrations, IndexType clusterId,
+	virtual std::vector<std::vector<double>>
+	getTableTwo(ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins,
 		IndexType gridIndex) = 0;
 
-	virtual double
-	getTableThree(ConcentrationsView concentrations, IndexType clusterId,
+	virtual std::vector<std::vector<double>>
+	getTableThree(ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins,
 		IndexType gridIndex) = 0;
 
-	virtual double
-	getTableFour(ConcentrationsView concentrations, IndexType clusterId,
-		IndexType gridIndex) = 0;
+	virtual std::vector<std::vector<double>>
+	getTableFour(ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins,
+	IndexType gridIndex) = 0;
 
 	/**
 	 * Get the diagonal fill for the Jacobian, corresponding to the reactions.

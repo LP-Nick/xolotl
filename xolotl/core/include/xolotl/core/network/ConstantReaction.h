@@ -324,32 +324,32 @@ private:
 
 	KOKKOS_INLINE_FUNCTION
 	double
-	computeTableOne(ConcentrationsView concentrations, IndexType clusterId,
-		IndexType gridIndex)
+	computeTableOne(ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins,
+		std::vector<std::vector<double>>& rates,IndexType gridIndex)
 	{
 		return 0.0;
 	}
 
 	KOKKOS_INLINE_FUNCTION
 	double
-	computeTableTwo(ConcentrationsView concentrations, IndexType clusterId,
-		IndexType gridIndex)
+	computeTableTwo(ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins,
+		std::vector<std::vector<double>>& rates,IndexType gridIndex)
 	{
 		return 0.0;
 	}
 
 	KOKKOS_INLINE_FUNCTION
 	double
-	computeTableThree(ConcentrationsView concentrations, IndexType clusterId,
-		IndexType gridIndex)
+	computeTableThree(ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins,
+		std::vector<std::vector<double>>& rates, IndexType gridIndex)
 	{
 		return 0.0;
 	}
 
 	KOKKOS_INLINE_FUNCTION
 	double
-	computeTableFour(ConcentrationsView concentrations, IndexType clusterId,
-		IndexType gridIndex)
+	computeTableFour(ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins,
+		std::vector<std::vector<double>>& rates, IndexType gridIndex)
 	{
 		return 0.0;
 	}

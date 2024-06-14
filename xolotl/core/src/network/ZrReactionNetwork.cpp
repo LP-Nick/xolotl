@@ -316,29 +316,51 @@ ZrReactionNetwork::getRxnDataHeaderString() const
 {
 	std::stringstream header;
 
-	header << "vac_size "<<"basal_size "<<"int_size "
-	<<"conc "<<"table_1 "<<"table_2 "<<"table_3 "<<"table_4 ";
-	
-	
+	header << "# species "<<"conc "<<"table_1_0 "<<"table_2_0 "<<"table_3_0 "<<"table_4_0 "
+				 <<"table_1_1 "<<"table_2_1 "<<"table_3_1 "<<"table_4_1 "
+				 <<"table_1_2 "<<"table_2_2 "<<"table_3_2 "<<"table_4_2 "
+				 <<"table_1_3 "<<"table_2_3 "<<"table_3_3 "<<"table_4_3 "
+				 <<"table_1_4 "<<"table_2_4 "<<"table_3_4 "<<"table_4_4 "
+				 <<"table_1_5 "<<"table_2_5 "<<"table_3_5 "<<"table_4_5 "
+				 <<"table_1_6 "<<"table_2_6 "<<"table_3_6 "<<"table_4_6 "
+				 <<"table_1_7 "<<"table_2_7 "<<"table_3_7 "<<"table_4_7 ";
+				 
+	//header << "test output to see if cluster ID bins are working";
 
 	return header.str();
 }
 
 void
 ZrReactionNetwork::addRxnDataValues(Kokkos::View<const double*> conc, 
-				std::vector<double>& totalVals)
+				std::vector<std::vector<double>>& totalVals)
 {
 		
 		auto data = this->_clusterData.h_view();
+		std::vector<IndexType> vacMobile, vacImmobile, vacAloop, intMobile, intImmobile, intAloop, basalImmobile, cLoop;
+		std::vector<std::vector<IndexType>> clusterBins;
+		std::vector<double> binConcs (8, 0.0);
+		std::vector<int> sizeThresholds {3,6,9,data.transitionSize()}; //upper size thresholds for mobile int, mobile vac, immobile vac and int, FBP
 		/*Kokkos::parallel_for(
 		this->_numClusters, KOKKOS_LAMBDA(const IndexType i) {*/
 		
 		for (auto i = 0; i<_numClusters;i++){
+			
 			auto cluster = data.getCluster(i);
 			const auto& reg = cluster.getRegion();
 			Composition lo(reg.getOrigin());
-				
-						
+			
+			if (lo.isOnAxis(Species::V) && lo[Species::V] <= sizeThresholds[1]) vacMobile.push_back(i);
+			else if (lo.isOnAxis(Species::V) && lo[Species::V] <= sizeThresholds[2]) vacImmobile.push_back(i);
+			else if (lo.isOnAxis(Species::V) && lo[Species::V] > sizeThresholds[2]) vacAloop.push_back(i);
+			
+			else if (lo.isOnAxis(Species::Basal) && lo[Species::Basal] < sizeThresholds[3]) basalImmobile.push_back(i);
+			else if (lo.isOnAxis(Species::Basal) && lo[Species::Basal] >= sizeThresholds[3]) cLoop.push_back(i);
+			
+			else if (lo.isOnAxis(Species::I) && lo[Species::I] <= sizeThresholds[0]) intMobile.push_back(i);
+			else if (lo.isOnAxis(Species::I) && lo[Species::I] <= sizeThresholds[2]) intImmobile.push_back(i);
+			else if (lo.isOnAxis(Species::I) && lo[Species::I] > sizeThresholds[2]) intAloop.push_back(i);
+			
+			/*			
 			totalVals[(8*i)+0] = (lo.isOnAxis(Species::V)) ? lo[Species::V] : 0;
 			totalVals[(8*i)+1] = (lo.isOnAxis(Species::Basal)) ? lo[Species::Basal] : 0;
 			totalVals[(8*i)+2] = (lo.isOnAxis(Species::I)) ? lo[Species::I] : 0;
@@ -346,14 +368,40 @@ ZrReactionNetwork::addRxnDataValues(Kokkos::View<const double*> conc,
 			totalVals[(8*i)+4] = getTableOne(conc, i, 0);
 			totalVals[(8*i)+5] = getTableTwo(conc, i, 0);
 			totalVals[(8*i)+6] = getTableThree(conc, i, 0);
-			totalVals[(8*i)+7] = getTableFour(conc, i, 0);
+			totalVals[(8*i)+7] = getTableFour(conc, i, 0);  */
 		
 	};
+	
+	clusterBins = {vacMobile, vacImmobile, vacAloop, intMobile, intImmobile, intAloop, basalImmobile, cLoop};
+	for (auto i = 0;i<clusterBins.size();i++){
+		for (auto j = 0;j<clusterBins[i].size();j++){
+			binConcs[i] += conc(clusterBins[i][j]);
+		}
+	}
+	
+	
+	auto tableOne = getTableOne(conc, clusterBins, 0); //8x8 vector of reaction rates for TableOne reaction 
+	auto tableTwo = getTableTwo(conc, clusterBins, 0);
+	auto tableThree = getTableOne(conc, clusterBins, 0);
+	auto tableFour = getTableOne(conc, clusterBins, 0);
+	
+	for (auto i=0;i<totalVals.size();i++){
+		totalVals[i][0] = i;
+		totalVals[i][1] = binConcs[i];
+		for (auto j = 0;j<tableOne[i].size();j++){
+			totalVals[i][(4*j)+2] = tableOne[i][j];
+			totalVals[i][(4*j)+3] = tableTwo[i][j];
+			totalVals[i][(4*j)+4] = tableThree[i][j];
+			totalVals[i][(4*j)+5] = tableFour[i][j]; 
+			
+		}
+	} 
+
 }
 
 void
 ZrReactionNetwork::writeRxnDataLine(
-	const std::vector<double>& localData, double time)
+	const std::vector<std::vector<double>>& localData, double time)
 {
 	/*auto numSpecies = getSpeciesListSize();
 
@@ -384,8 +432,8 @@ ZrReactionNetwork::writeRxnDataLine(
 		outputFile << std::setprecision(outputPrecision);
 
 		// Output the data
-		outputFile << "time: "<<time << std::endl;
-		for (auto i = 0; i < _numClusters; i++) {
+		outputFile << "# time: "<<time << std::endl;
+		/*for (auto i = 0; i < _numClusters; i++) {
 			unsigned long int vSize = (localData[8*i+0]);
 			unsigned long int bSize = (localData[8*i+1]);
 			unsigned long int iSize = (localData[8*i+2]);
@@ -393,9 +441,15 @@ ZrReactionNetwork::writeRxnDataLine(
 					   << iSize <<" "<< localData[8*i+3] << " "
 					   << localData[8*i+4] << " "<< localData[8*i+5] << " "
 						 << localData[8*i+6]<<" "<<localData[8*i+7]  << " "<< std::endl;
-		}
+		}*/
 		
-
+		for (auto i = 0; i < localData.size(); i++){
+			for (auto j = 0; j < localData[i].size(); j++){
+				outputFile << localData[i][j] <<" ";
+				//outputFile << localData[i].size();
+			}
+			outputFile << std::endl;
+		}
 		// Close the output file
 		outputFile.close();
 	

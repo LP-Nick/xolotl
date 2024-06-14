@@ -1840,15 +1840,23 @@ template <typename TNetwork, typename TDerived>
 KOKKOS_INLINE_FUNCTION
 double
 ProductionReaction<TNetwork, TDerived>::computeTableOne(
-	ConcentrationsView concentrations, IndexType clusterId, IndexType gridIndex)
+	ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins, std::vector<std::vector<double>>& rates, IndexType gridIndex)
 {
-	// Check if our cluster is on the right side of this reaction
-	if (clusterId == _products[0] || clusterId == _products[1]) {
-		return this->_rate(gridIndex) * concentrations[_reactants[1]] *
+	// Check what bins our clusters are in
+	auto binProduct = (_products[0] == invalidIndex) ?  whichBin(clusterBins,_products[0]) : whichBin(clusterBins,_products[1]);
+	auto binReactant0 = whichBin(clusterBins,_reactants[0]);
+	auto binReactant1 = whichBin(clusterBins,_reactants[1]);
+	
+	auto rateTableOne = this->_rate(gridIndex) * concentrations[_reactants[1]] *
 			this->_coefs(0, 0, 0, 0) * concentrations[_reactants[0]];
+	
+	if (binReactant0 == binReactant1)
+		rates[binProduct][binReactant0] += rateTableOne;
+	else {
+		rates[binProduct][binReactant0] += rateTableOne;
+		rates[binProduct][binReactant1] += rateTableOne;
 	}
 	
-	// This cluster is not a  product of the reaction
 	return 0.0;
 }
 
@@ -1856,15 +1864,22 @@ template <typename TNetwork, typename TDerived>
 KOKKOS_INLINE_FUNCTION
 double
 ProductionReaction<TNetwork, TDerived>::computeTableTwo(
-	ConcentrationsView concentrations, IndexType clusterId, IndexType gridIndex)
+	ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins, std::vector<std::vector<double>>& rates, IndexType gridIndex)
 {
-	// Check if our cluster is on the left side of this reaction
-	if (clusterId == _reactants[0] || clusterId == _reactants[1]) {
-		return this->_rate(gridIndex) * concentrations[_reactants[1]] *
+	auto binProduct = (_products[0] == invalidIndex) ?  whichBin(clusterBins,_products[0]) : whichBin(clusterBins,_products[1]);
+	auto binReactant0 = whichBin(clusterBins,_reactants[0]);
+	auto binReactant1 = whichBin(clusterBins,_reactants[1]);
+	
+	auto rateTableTwo =	this->_rate(gridIndex) * concentrations[_reactants[1]] *
 			this->_coefs(0, 0, 0, 0) * concentrations[_reactants[0]];
+	
+	if (binReactant0 == binReactant1)
+		rates[binReactant0][binProduct] += rateTableTwo;
+	else {
+		rates[binReactant0][binProduct] += rateTableTwo;
+		rates[binReactant1][binProduct] += rateTableTwo;
 	}
-
-	// This cluster is not part of the reaction
+	
 	return 0.0;
 }
 
@@ -3038,15 +3053,23 @@ template <typename TNetwork, typename TDerived>
 KOKKOS_INLINE_FUNCTION
 double
 DissociationReaction<TNetwork, TDerived>::computeTableThree(
-	ConcentrationsView concentrations, IndexType clusterId, IndexType gridIndex)
+	ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins, std::vector<std::vector<double>>& rates, IndexType gridIndex)
 {
-	// Check if our cluster is on the right side of this reaction
-	if (clusterId == _products[0] || clusterId == _products[1]) {
-		return this->_rate(gridIndex) * concentrations[_reactant] * 
+	// Check what bins our clusters are in
+	auto binProduct0 = whichBin(clusterBins,_products[0]);
+	auto binProduct1 = whichBin(clusterBins,_products[1]);
+	auto binReactant = whichBin(clusterBins,_reactant);
+	
+	auto rateTableThree = this->_rate(gridIndex) * concentrations[_reactant] * 
 						this->_coefs(0, 0, 0, 0);
+	
+	if (binProduct0 == binProduct1)
+		rates[binProduct0][binReactant] += rateTableThree;
+	else {
+		rates[binProduct0][binReactant] += rateTableThree;
+		rates[binProduct1][binReactant] += rateTableThree;
 	}
 
-	// This cluster is not part of the reaction
 	return 0.0;
 }
 
@@ -3054,15 +3077,23 @@ template <typename TNetwork, typename TDerived>
 KOKKOS_INLINE_FUNCTION
 double
 DissociationReaction<TNetwork, TDerived>::computeTableFour(
-	ConcentrationsView concentrations, IndexType clusterId, IndexType gridIndex)
+	ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins, std::vector<std::vector<double>>& rates, IndexType gridIndex)
 {
-	// Check if our cluster is on the left side of this reaction
-	if (clusterId == _reactant) {
-		return this->_rate(gridIndex) * concentrations[_reactant] * 
+	// Check what bins our clusters are in
+	auto binProduct0 = whichBin(clusterBins,_products[0]);
+	auto binProduct1 = whichBin(clusterBins,_products[1]);
+	auto binReactant = whichBin(clusterBins,_reactant);
+	
+	auto rateTableFour = this->_rate(gridIndex) * concentrations[_reactant] * 
 						this->_coefs(0, 0, 0, 0);
+	
+	if (binProduct0 == binProduct1)
+		rates[binReactant][binProduct0] += rateTableFour;
+	else {
+		rates[binReactant][binProduct0] += rateTableFour;
+		rates[binReactant][binProduct1] += rateTableFour;
 	}
 
-	// This cluster is not part of the reaction
 	return 0.0;
 }
 

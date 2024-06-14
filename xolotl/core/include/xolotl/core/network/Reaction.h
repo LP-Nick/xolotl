@@ -13,6 +13,7 @@
 #include <xolotl/core/network/detail/ReactionData.h>
 #include <xolotl/util/Array.h>
 
+
 namespace xolotl
 {
 namespace core
@@ -170,39 +171,57 @@ public:
 	KOKKOS_INLINE_FUNCTION
 	double
 	contributeTableOne(ConcentrationsView concentrations,
-		IndexType clusterId, IndexType gridIndex)
+		std::vector<std::vector<IndexType>> clusterBins, 
+		std::vector<std::vector<double>>& rates, IndexType gridIndex)
 	{
 		return asDerived()->computeTableOne(
-			concentrations, clusterId, gridIndex);
+			concentrations, clusterBins, rates, gridIndex);
+				
 	}
 	
 	KOKKOS_INLINE_FUNCTION
 	double
 	contributeTableTwo(ConcentrationsView concentrations,
-		IndexType clusterId, IndexType gridIndex)
+		std::vector<std::vector<IndexType>> clusterBins, 
+		std::vector<std::vector<double>>& rates, IndexType gridIndex)
 	{
 		return asDerived()->computeTableTwo(
-			concentrations, clusterId, gridIndex);
+			concentrations, clusterBins, rates, gridIndex);
 	}
 	
 	KOKKOS_INLINE_FUNCTION
 	double
 	contributeTableThree(ConcentrationsView concentrations,
-		IndexType clusterId, IndexType gridIndex)
+		std::vector<std::vector<IndexType>> clusterBins, 
+		std::vector<std::vector<double>>& rates, IndexType gridIndex)
 	{
 		return asDerived()->computeTableThree(
-			concentrations, clusterId, gridIndex);
+			concentrations, clusterBins, rates, gridIndex);
 	}
 	
 	KOKKOS_INLINE_FUNCTION
 	double
 	contributeTableFour(ConcentrationsView concentrations,
-		IndexType clusterId, IndexType gridIndex)
+		std::vector<std::vector<IndexType>> clusterBins, 
+		std::vector<std::vector<double>>& rates, IndexType gridIndex)
 	{
 		return asDerived()->computeTableFour(
-			concentrations, clusterId, gridIndex);
+			concentrations, clusterBins, rates, gridIndex);
 	}
-
+	
+	KOKKOS_INLINE_FUNCTION
+	int
+	whichBin(std::vector<std::vector<IndexType>> clusterBins, 
+		IndexType clusterId)
+	{
+		for (auto i=0;i<clusterBins.size();i++){
+			for (auto j=0;j<clusterBins[i].size();j++){
+				if(clusterBins[i][j] == clusterId) return (i);
+			}
+		}
+		return 0;
+	}
+	
 	KOKKOS_INLINE_FUNCTION
 	void
 	defineJacobianEntries(Connectivity connectivity)
@@ -422,23 +441,36 @@ private:
 
 	KOKKOS_INLINE_FUNCTION
 	double
-	computeTableOne(ConcentrationsView concentrations, IndexType clusterId,
-		IndexType gridIndex);
+	computeTableOne(ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins,
+		std::vector<std::vector<double>>& rates, IndexType gridIndex);
 
 	KOKKOS_INLINE_FUNCTION
 	double
-	computeTableTwo(ConcentrationsView concentrations, IndexType clusterId,
-		IndexType gridIndex);
+	computeTableTwo(ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins,
+		std::vector<std::vector<double>>& rates, IndexType gridIndex);
 
 	KOKKOS_INLINE_FUNCTION
 	double
-	computeTableThree(ConcentrationsView concentrations, IndexType clusterId,
-		IndexType gridIndex){return 0.0;}
+	computeTableThree(ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins,
+		std::vector<std::vector<double>>& rates, IndexType gridIndex){return 0.0;}
 
 	KOKKOS_INLINE_FUNCTION
 	double
-	computeTableFour(ConcentrationsView concentrations, IndexType clusterId,
-		IndexType gridIndex){return 0.0;}
+	computeTableFour(ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins,
+		std::vector<std::vector<double>>& rates, IndexType gridIndex){return 0.0;}
+
+	KOKKOS_INLINE_FUNCTION
+	int
+	whichBin(std::vector<std::vector<IndexType>> clusterBins, 
+		IndexType clusterId)
+	{
+		for (auto i=0;i<clusterBins.size();i++){
+			for (auto j=0;j<clusterBins[i].size();j++){
+				if(clusterBins[i][j] == clusterId) return (i);
+			}
+		}
+		return 0;
+	}
 
 	KOKKOS_INLINE_FUNCTION
 	void
@@ -570,23 +602,36 @@ private:
 
 	KOKKOS_INLINE_FUNCTION
 	double
-	computeTableOne(ConcentrationsView concentrations, IndexType clusterId,
-		IndexType gridIndex){return 0.0;}
+	computeTableOne(ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins,
+		std::vector<std::vector<double>>& rates, IndexType gridIndex){return 0.0;}
 
 	KOKKOS_INLINE_FUNCTION
 	double
-	computeTableTwo(ConcentrationsView concentrations, IndexType clusterId,
-		IndexType gridIndex){return 0.0;}
+	computeTableTwo(ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins,
+		std::vector<std::vector<double>>& rates, IndexType gridIndex){return 0.0;}
 
 	KOKKOS_INLINE_FUNCTION
 	double
-	computeTableThree(ConcentrationsView concentrations, IndexType clusterId,
-		IndexType gridIndex);
+	computeTableThree(ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins,
+		std::vector<std::vector<double>>& rates, IndexType gridIndex);
 
 	KOKKOS_INLINE_FUNCTION
 	double
-	computeTableFour(ConcentrationsView concentrations, IndexType clusterId,
-		IndexType gridIndex);
+	computeTableFour(ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins,
+		std::vector<std::vector<double>>& rates, IndexType gridIndex);
+
+	KOKKOS_INLINE_FUNCTION
+	int
+	whichBin(std::vector<std::vector<IndexType>> clusterBins, 
+		IndexType clusterId)
+	{
+		for (auto i=0;i<clusterBins.size();i++){
+			for (auto j=0;j<clusterBins[i].size();j++){
+				if(clusterBins[i][j] == clusterId) return (i);
+			}
+		}
+		return 0;
+	}
 
 	KOKKOS_INLINE_FUNCTION
 	void

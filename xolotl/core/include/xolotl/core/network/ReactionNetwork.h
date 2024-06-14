@@ -304,17 +304,17 @@ public:
 		throw util::NotImplementedError();
 	}
 
-	std::vector<double>
+	std::vector<std::vector<double>>
 	getRxnDataValues(Kokkos::View<const double*> conc) override
 	{
-		auto ret = std::vector<double>(getRxnDataLineSize(), 0.0);
+		auto ret = std::vector<std::vector<double>> (8, std::vector<double>(getRxnDataLineSize(), 0.0));
 		addRxnDataValues(conc, ret);
 		return ret;
 	}
 
 	void
 	addRxnDataValues(Kokkos::View<const double*> conc,
-		std::vector<double>& totalVals) override
+		std::vector<std::vector<double>>& totalVals) override
 	{
 		throw util::NotImplementedError();
 	}
@@ -334,7 +334,7 @@ public:
 
 	void
 	writeRxnDataLine(
-		const std::vector<double>& localData, double time) override
+		const std::vector<std::vector<double>>& localData, double time) override
 	{
 		throw util::NotImplementedError();
 	}
@@ -598,20 +598,20 @@ public:
 	getLeftSideRate(ConcentrationsView concentrations, IndexType clusterId,
 		IndexType gridIndex) override;
 
-	double
-	getTableOne(ConcentrationsView concentrations, IndexType clusterId,
+	std::vector<std::vector<double>>
+	getTableOne(ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins,
 		IndexType gridIndex) override;
 		
-	double
-	getTableTwo(ConcentrationsView concentrations, IndexType clusterId,
+	std::vector<std::vector<double>>
+	getTableTwo(ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins,
 		IndexType gridIndex) override;
 		
-	double
-	getTableThree(ConcentrationsView concentrations, IndexType clusterId,
+	std::vector<std::vector<double>>
+	getTableThree(ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins,
 		IndexType gridIndex) override;
 		
-	double
-	getTableFour(ConcentrationsView concentrations, IndexType clusterId,
+	std::vector<std::vector<double>>
+	getTableFour(ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins,
 		IndexType gridIndex) override;
 
 	IndexType
