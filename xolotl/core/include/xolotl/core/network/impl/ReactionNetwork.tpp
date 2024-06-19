@@ -636,11 +636,12 @@ ReactionNetwork<TImpl>::getTableOne(
 {
 	// Set up vector for rates of TableOne reactions
 	std::vector<std::vector<double>> rates (8, std::vector<double> (8,0));
+	auto ratesRef = std::ref(rates);
 	
 	// Loop on all the rates
 	_reactions.forEach(
 		"ReactionNetwork::getTableOne",DEVICE_LAMBDA(auto&& reaction) {
-			reaction.contributeTableOne(concentrations, clusterBins, rates, gridIndex);
+			reaction.contributeTableOne(concentrations, clusterBins, ratesRef, gridIndex);
 		});
 	Kokkos::fence();
 	return rates;
@@ -653,11 +654,12 @@ ReactionNetwork<TImpl>::getTableTwo(
 {
 	// Set up vector for rates of TableTwo reactions
 	std::vector<std::vector<double>> rates (8, std::vector<double> (8,0));
+	auto ratesRef = std::ref(rates);
 	
 	// Loop on all the rates
 	_reactions.forEach(
 		"ReactionNetwork::getTableTwo",DEVICE_LAMBDA(auto&& reaction) {
-			reaction.contributeTableTwo(concentrations, clusterBins, rates, gridIndex);
+			reaction.contributeTableTwo(concentrations, clusterBins, ratesRef, gridIndex);
 		});
 	Kokkos::fence();
 	return rates;
@@ -670,11 +672,12 @@ ReactionNetwork<TImpl>::getTableThree(
 {
 	// Set up vector for rates of TableThree reactions
 	std::vector<std::vector<double>> rates (8, std::vector<double> (8,0));
+	auto ratesRef = std::ref(rates);
 	
 	// Loop on all the rates
 	_reactions.forEach(
 		"ReactionNetwork::getTableThree",DEVICE_LAMBDA(auto&& reaction) {
-			reaction.contributeTableThree(concentrations, clusterBins, rates, gridIndex);
+			reaction.contributeTableThree(concentrations, clusterBins, ratesRef, gridIndex);
 		});
 	Kokkos::fence();
 	return rates;
@@ -687,13 +690,20 @@ ReactionNetwork<TImpl>::getTableFour(
 {
 	// Set up vector for rates of TableFour reactions
 	std::vector<std::vector<double>> rates (8, std::vector<double> (8,0));
+	auto ratesRef = std::ref(rates);
 	
 	// Loop on all the rates
 	_reactions.forEach(
 		"ReactionNetwork::getTableFour",DEVICE_LAMBDA(auto&& reaction) {
-			reaction.contributeTableOne(concentrations, clusterBins, rates, gridIndex);
+			reaction.contributeTableFour(concentrations, clusterBins, ratesRef, gridIndex);
 		});
 	Kokkos::fence();
+	for (auto i = 0; i < rates.size(); i++){
+			for (auto j = 0; j < rates[i].size(); j++){
+				std::cout << rates[i][j]<<" ";
+			}
+			std::cout << std::endl;
+	}
 	return rates;
 }
 

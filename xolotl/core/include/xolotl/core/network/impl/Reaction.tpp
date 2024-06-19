@@ -1843,9 +1843,13 @@ ProductionReaction<TNetwork, TDerived>::computeTableOne(
 	ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins, std::vector<std::vector<double>>& rates, IndexType gridIndex)
 {
 	// Check what bins our clusters are in
-	auto binProduct = (_products[0] == invalidIndex) ?  whichBin(clusterBins,_products[0]) : whichBin(clusterBins,_products[1]);
+	auto binProduct = (_products[0] == invalidIndex) ?  whichBin(clusterBins,_products[1]) : whichBin(clusterBins,_products[0]);
 	auto binReactant0 = whichBin(clusterBins,_reactants[0]);
 	auto binReactant1 = whichBin(clusterBins,_reactants[1]);
+	
+	auto productId = (_products[0] == invalidIndex) ? (_products[1]) : (_products[0]);
+	
+	
 	
 	auto rateTableOne = this->_rate(gridIndex) * concentrations[_reactants[1]] *
 			this->_coefs(0, 0, 0, 0) * concentrations[_reactants[0]];
@@ -1856,6 +1860,12 @@ ProductionReaction<TNetwork, TDerived>::computeTableOne(
 		rates[binProduct][binReactant0] += rateTableOne;
 		rates[binProduct][binReactant1] += rateTableOne;
 	}
+	/*
+	std::cout << "product ID " << productId <<" product bin " << binProduct<<std::endl
+		<< "reactant0 ID " << _reactants[0]<<" reactant0 bin " << binReactant0<<std::endl
+		<< "reactant1 ID " << _reactants[1]<<" reactant1 bin " << binReactant1<<std::endl
+		<< "rate " << rateTableOne<<std::endl
+		<< std::endl;*/
 	
 	return 0.0;
 }
@@ -1866,7 +1876,7 @@ double
 ProductionReaction<TNetwork, TDerived>::computeTableTwo(
 	ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins, std::vector<std::vector<double>>& rates, IndexType gridIndex)
 {
-	auto binProduct = (_products[0] == invalidIndex) ?  whichBin(clusterBins,_products[0]) : whichBin(clusterBins,_products[1]);
+	auto binProduct = (_products[0] == invalidIndex) ?  whichBin(clusterBins,_products[1]) : whichBin(clusterBins,_products[0]);
 	auto binReactant0 = whichBin(clusterBins,_reactants[0]);
 	auto binReactant1 = whichBin(clusterBins,_reactants[1]);
 	

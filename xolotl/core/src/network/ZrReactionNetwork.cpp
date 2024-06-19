@@ -381,9 +381,9 @@ ZrReactionNetwork::addRxnDataValues(Kokkos::View<const double*> conc,
 	
 	
 	auto tableOne = getTableOne(conc, clusterBins, 0); //8x8 vector of reaction rates for TableOne reaction 
-	auto tableTwo = getTableTwo(conc, clusterBins, 0);
-	auto tableThree = getTableOne(conc, clusterBins, 0);
-	auto tableFour = getTableOne(conc, clusterBins, 0);
+	auto tableTwo = getTableTwo(conc, clusterBins, 0); //8x8 vector of reaction rates for TableTwo reaction 
+	auto tableThree = getTableThree(conc, clusterBins, 0); //8x8 vector of reaction rates for TableThree reaction 
+	auto tableFour = getTableFour(conc, clusterBins, 0); //8x8 vector of reaction rates for TableFour reaction 
 	
 	for (auto i=0;i<totalVals.size();i++){
 		totalVals[i][0] = i;
@@ -396,7 +396,20 @@ ZrReactionNetwork::addRxnDataValues(Kokkos::View<const double*> conc,
 			
 		}
 	} 
-
+	// Open the output file
+	/*
+	const int outputPrecision = 5;
+		std::fstream outputFile;
+		outputFile.open(
+			getRxnOutputFileName(), std::fstream::out | std::fstream::app);
+		outputFile << std::setprecision(outputPrecision);
+		
+		for (auto i = 0; i < clusterBins.size(); i++){
+			for (auto j = 0; j < clusterBins[i].size(); j++){
+				outputFile << clusterBins[i][j]<<" ";
+			}
+			outputFile << std::endl;
+		}*/
 }
 
 void
@@ -424,7 +437,7 @@ ZrReactionNetwork::writeRxnDataLine(
 	*/
 		// Set the output precision
 		const int outputPrecision = 5;
-
+		
 		// Open the output file
 		std::fstream outputFile;
 		outputFile.open(
@@ -441,8 +454,8 @@ ZrReactionNetwork::writeRxnDataLine(
 					   << iSize <<" "<< localData[8*i+3] << " "
 					   << localData[8*i+4] << " "<< localData[8*i+5] << " "
 						 << localData[8*i+6]<<" "<<localData[8*i+7]  << " "<< std::endl;
-		}*/
-		
+		}//
+		*/
 		for (auto i = 0; i < localData.size(); i++){
 			for (auto j = 0; j < localData[i].size(); j++){
 				outputFile << localData[i][j] <<" ";
