@@ -1843,11 +1843,11 @@ ProductionReaction<TNetwork, TDerived>::computeTableOne(
 	ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins, std::vector<std::vector<double>>& rates, IndexType gridIndex)
 {
 	// Check what bins our clusters are in
-	auto binProduct = (_products[0] == invalidIndex) ?  whichBin(clusterBins,_products[1]) : whichBin(clusterBins,_products[0]);
+	auto binProduct = whichBin(clusterBins,_products[0]);
 	auto binReactant0 = whichBin(clusterBins,_reactants[0]);
 	auto binReactant1 = whichBin(clusterBins,_reactants[1]);
 	
-	auto productId = (_products[0] == invalidIndex) ? (_products[1]) : (_products[0]);
+	auto productId = _products[0];
 	
 	
 	
@@ -1876,7 +1876,7 @@ double
 ProductionReaction<TNetwork, TDerived>::computeTableTwo(
 	ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins, std::vector<std::vector<double>>& rates, IndexType gridIndex)
 {
-	auto binProduct = (_products[0] == invalidIndex) ?  whichBin(clusterBins,_products[1]) : whichBin(clusterBins,_products[0]);
+	auto binProduct = whichBin(clusterBins,_products[0]);
 	auto binReactant0 = whichBin(clusterBins,_reactants[0]);
 	auto binReactant1 = whichBin(clusterBins,_reactants[1]);
 	

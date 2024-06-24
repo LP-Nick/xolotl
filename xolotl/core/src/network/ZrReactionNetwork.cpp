@@ -316,7 +316,7 @@ ZrReactionNetwork::getRxnDataHeaderString() const
 {
 	std::stringstream header;
 
-	header << "# species "<<"conc "<<"table_1_0 "<<"table_2_0 "<<"table_3_0 "<<"table_4_0 "
+	header << "# species "<<"conc "<< "size "<<"table_1_0 "<<"table_2_0 "<<"table_3_0 "<<"table_4_0 "
 				 <<"table_1_1 "<<"table_2_1 "<<"table_3_1 "<<"table_4_1 "
 				 <<"table_1_2 "<<"table_2_2 "<<"table_3_2 "<<"table_4_2 "
 				 <<"table_1_3 "<<"table_2_3 "<<"table_3_3 "<<"table_4_3 "
@@ -339,6 +339,7 @@ ZrReactionNetwork::addRxnDataValues(Kokkos::View<const double*> conc,
 		std::vector<IndexType> vacMobile, vacImmobile, vacAloop, intMobile, intImmobile, intAloop, basalImmobile, cLoop;
 		std::vector<std::vector<IndexType>> clusterBins;
 		std::vector<double> binConcs (8, 0.0);
+		std::vector<double> binSizes (8, 0.0);
 		std::vector<int> sizeThresholds {3,6,9,data.transitionSize()}; //upper size thresholds for mobile int, mobile vac, immobile vac and int, FBP
 		/*Kokkos::parallel_for(
 		this->_numClusters, KOKKOS_LAMBDA(const IndexType i) {*/
@@ -360,23 +361,39 @@ ZrReactionNetwork::addRxnDataValues(Kokkos::View<const double*> conc,
 			else if (lo.isOnAxis(Species::I) && lo[Species::I] <= sizeThresholds[2]) intImmobile.push_back(i);
 			else if (lo.isOnAxis(Species::I) && lo[Species::I] > sizeThresholds[2]) intAloop.push_back(i);
 			
-			/*			
-			totalVals[(8*i)+0] = (lo.isOnAxis(Species::V)) ? lo[Species::V] : 0;
-			totalVals[(8*i)+1] = (lo.isOnAxis(Species::Basal)) ? lo[Species::Basal] : 0;
-			totalVals[(8*i)+2] = (lo.isOnAxis(Species::I)) ? lo[Species::I] : 0;
-			totalVals[(8*i)+3] = conc(i);
-			totalVals[(8*i)+4] = getTableOne(conc, i, 0);
-			totalVals[(8*i)+5] = getTableTwo(conc, i, 0);
-			totalVals[(8*i)+6] = getTableThree(conc, i, 0);
-			totalVals[(8*i)+7] = getTableFour(conc, i, 0);  */
-		
+					
 	};
 	
 	clusterBins = {vacMobile, vacImmobile, vacAloop, intMobile, intImmobile, intAloop, basalImmobile, cLoop};
 	for (auto i = 0;i<clusterBins.size();i++){
+		auto num = 0.0; //numerator for effective size calculation
+		auto denom = 0.0;
 		for (auto j = 0;j<clusterBins[i].size();j++){
+			// determine species for effective size weighted average
+			auto cluster = data.getCluster(clusterBins[i][j]);
+			const auto& reg = cluster.getRegion();
+			Composition lo(reg.getOrigin());
+			
+			unsigned long int sizeSpec;
+			auto wConc = conc(clusterBins[i][j]); //effective size is weighted by concentration
+			
+			if (lo.isOnAxis(Species::V)){
+				sizeSpec = lo[Species::V]; //get size of cluster j in bin i if vac
+			}
+			else if (lo.isOnAxis(Species::Basal)){
+				sizeSpec = lo[Species::Basal]; //get size of cluster j in bin i if basal
+			}
+			else if (lo.isOnAxis(Species::I)){
+				sizeSpec = lo[Species::I]; //get size of cluster j in bin i if int
+			}
+			
+			num += wConc*sizeSpec;
+			denom += wConc;
+		
+			// sum concentrations for each bin
 			binConcs[i] += conc(clusterBins[i][j]);
 		}
+		binSizes[i] = num/denom;
 	}
 	
 	
@@ -388,11 +405,12 @@ ZrReactionNetwork::addRxnDataValues(Kokkos::View<const double*> conc,
 	for (auto i=0;i<totalVals.size();i++){
 		totalVals[i][0] = i;
 		totalVals[i][1] = binConcs[i];
+		totalVals[i][2] = binSizes[i];
 		for (auto j = 0;j<tableOne[i].size();j++){
-			totalVals[i][(4*j)+2] = tableOne[i][j];
-			totalVals[i][(4*j)+3] = tableTwo[i][j];
-			totalVals[i][(4*j)+4] = tableThree[i][j];
-			totalVals[i][(4*j)+5] = tableFour[i][j]; 
+			totalVals[i][(4*j)+3] = tableOne[i][j];
+			totalVals[i][(4*j)+4] = tableTwo[i][j];
+			totalVals[i][(4*j)+5] = tableThree[i][j];
+			totalVals[i][(4*j)+6] = tableFour[i][j]; 
 			
 		}
 	} 

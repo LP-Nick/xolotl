@@ -94,7 +94,7 @@ public:
 	std::size_t
 	getRxnDataLineSize() const override
 	{
-		return 34;
+		return 35;
 	}
 
 	void

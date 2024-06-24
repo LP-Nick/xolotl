@@ -219,7 +219,7 @@ public:
 				if(clusterBins[i][j] == clusterId) return (i);
 			}
 		}
-		return 0;
+		return -1;
 	}
 	
 	KOKKOS_INLINE_FUNCTION
@@ -469,7 +469,7 @@ private:
 				if(clusterBins[i][j] == clusterId) return (i);
 			}
 		}
-		return 0;
+		return -1;
 	}
 
 	KOKKOS_INLINE_FUNCTION
@@ -630,7 +630,7 @@ private:
 				if(clusterBins[i][j] == clusterId) return (i);
 			}
 		}
-		return 0;
+		return -1;
 	}
 
 	KOKKOS_INLINE_FUNCTION
