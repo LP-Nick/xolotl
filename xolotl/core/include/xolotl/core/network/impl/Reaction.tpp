@@ -1847,6 +1847,8 @@ ProductionReaction<TNetwork, TDerived>::computeTableOne(
 	auto binReactant0 = whichBin(clusterBins,_reactants[0]);
 	auto binReactant1 = whichBin(clusterBins,_reactants[1]);
 	
+	if (binProduct < 0 || binReactant0 < 0 || binReactant1 < 0) {return 0.0;}
+	
 	auto productId = _products[0];
 	
 	
@@ -1879,6 +1881,8 @@ ProductionReaction<TNetwork, TDerived>::computeTableTwo(
 	auto binProduct = whichBin(clusterBins,_products[0]);
 	auto binReactant0 = whichBin(clusterBins,_reactants[0]);
 	auto binReactant1 = whichBin(clusterBins,_reactants[1]);
+	
+	if (binProduct < 0 || binReactant0 < 0 || binReactant1 < 0) {return 0.0;}
 	
 	auto rateTableTwo =	this->_rate(gridIndex) * concentrations[_reactants[1]] *
 			this->_coefs(0, 0, 0, 0) * concentrations[_reactants[0]];
@@ -3070,6 +3074,8 @@ DissociationReaction<TNetwork, TDerived>::computeTableThree(
 	auto binProduct1 = whichBin(clusterBins,_products[1]);
 	auto binReactant = whichBin(clusterBins,_reactant);
 	
+	if (binProduct0 < 0 || binProduct1 < 0 || binReactant < 0) {return 0.0;}
+	
 	auto rateTableThree = this->_rate(gridIndex) * concentrations[_reactant] * 
 						this->_coefs(0, 0, 0, 0);
 	
@@ -3093,6 +3099,8 @@ DissociationReaction<TNetwork, TDerived>::computeTableFour(
 	auto binProduct0 = whichBin(clusterBins,_products[0]);
 	auto binProduct1 = whichBin(clusterBins,_products[1]);
 	auto binReactant = whichBin(clusterBins,_reactant);
+	
+	if (binProduct0 < 0 || binProduct1 < 0 || binReactant < 0) {return 0.0;}
 	
 	auto rateTableFour = this->_rate(gridIndex) * concentrations[_reactant] * 
 						this->_coefs(0, 0, 0, 0);
