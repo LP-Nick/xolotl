@@ -2415,7 +2415,6 @@ DissociationReaction<TNetwork, TDerived>::computeRate(
 
 	double kPlus = this->asDerived()->getRateForProduction(gridIndex);
 	double E_b = this->asDerived()->computeBindingEnergy(time);
-
 	constexpr double k_B = ::xolotl::core::kBoltzmann;
 
 	double kMinus = (1.0 / omega) * kPlus * std::exp(-E_b / (k_B * T));

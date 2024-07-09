@@ -245,8 +245,8 @@ ZrDissociationReaction::computeBindingEnergy(double time)
 		double gamma = cp;
 
 		double n = (double)(lo[Species::Basal] + hi[Species::Basal] - 1) / 2.0;
-		if (prod1Comp.isOnAxis(Species::Basal) ||
-			prod2Comp.isOnAxis(Species::Basal)) {
+		/*if (prod1Comp.isOnAxis(Species::Basal) ||
+			prod2Comp.isOnAxis(Species::Basal)) */{
 			if (n < this->_clusterData->transitionSize()) {
 				be = 1.762 +
 					((5.352 * sqrt(n - 1) + 0.122 * (n - 1) + 0.154 * (n - 1) -
