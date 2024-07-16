@@ -345,89 +345,88 @@ ZrReactionNetwork::addRxnDataValues(Kokkos::View<const double*> conc,
 		this->_numClusters, KOKKOS_LAMBDA(const IndexType i) {*/
 		
 		for (auto i = 0; i<_numClusters;i++){
-			
+			// get relevan data for every cluster including size, conc, and species (bin)
 			auto cluster = data.getCluster(i);
 			const auto& reg = cluster.getRegion();
-			Composition lo(reg.getOrigin());
+			Composition lo = reg.getOrigin();
+			Composition hi = reg.getUpperLimitPoint();
 			
-			if (lo.isOnAxis(Species::V) && lo[Species::V] <= sizeThresholds[1]) vacMobile.push_back(i);
-			else if (lo.isOnAxis(Species::V) && lo[Species::V] <= sizeThresholds[2]) vacImmobile.push_back(i);
-			else if (lo.isOnAxis(Species::V) && lo[Species::V] > sizeThresholds[2]) vacAloop.push_back(i);
+			if (lo.isOnAxis(Species::V) && lo[Species::V] <= sizeThresholds[1]) vacMobile.push_back(i); // if species is vac and size <= 6: mobile vac
+			else if (lo.isOnAxis(Species::V) && lo[Species::V] <= sizeThresholds[2]) vacImmobile.push_back(i); //else if species is vac and size <= 9: immobile vac
+			else if (lo.isOnAxis(Species::V) && lo[Species::V] > sizeThresholds[2]) vacAloop.push_back(i); //else if species is vac and size > 9: vac aloop
 			
-			else if (lo.isOnAxis(Species::Basal) && lo[Species::Basal] < sizeThresholds[3]) basalImmobile.push_back(i);
-			else if (lo.isOnAxis(Species::Basal) && lo[Species::Basal] >= sizeThresholds[3]) cLoop.push_back(i);
+			else if (lo.isOnAxis(Species::Basal) && (hi[Species::Basal] -1.0 + lo[Species::Basal])/2 < sizeThresholds[3]){
+				basalImmobile.push_back(i); //if species is basal and size < transition size: basal
+				}
+			else if (lo.isOnAxis(Species::Basal) && (hi[Species::Basal] -1.0 + lo[Species::Basal])/2 >= sizeThresholds[3]){ 
+				cLoop.push_back(i); // if species is basal and size > transition size: cloop
+				}
 			
-			else if (lo.isOnAxis(Species::I) && lo[Species::I] <= sizeThresholds[0]) intMobile.push_back(i);
-			else if (lo.isOnAxis(Species::I) && lo[Species::I] <= sizeThresholds[2]) intImmobile.push_back(i);
-			else if (lo.isOnAxis(Species::I) && lo[Species::I] > sizeThresholds[2]) intAloop.push_back(i);
+			else if (lo.isOnAxis(Species::I) && lo[Species::I] <= sizeThresholds[0]) intMobile.push_back(i); //if species is int and size <= 3: mobile int
+			else if (lo.isOnAxis(Species::I) && lo[Species::I] <= sizeThresholds[2]) intImmobile.push_back(i); //else if species is int and size <= 9: immobile int
+			else if (lo.isOnAxis(Species::I) && lo[Species::I] > sizeThresholds[2]) intAloop.push_back(i); //else if species is int and size > 9: int aloop
 			
 					
-	};
+	}
 	
 	clusterBins = {vacMobile, vacImmobile, vacAloop, intMobile, intImmobile, intAloop, basalImmobile, cLoop};
 	for (auto i = 0;i<clusterBins.size();i++){
 		auto num = 0.0; //numerator for effective size calculation
-		auto denom = 0.0;
+		auto denom = 0.0; //denom for effective size
 		for (auto j = 0;j<clusterBins[i].size();j++){
-			// determine species for effective size weighted average
+			// determine species and attributes for effective size weighted average
 			auto cluster = data.getCluster(clusterBins[i][j]);
 			const auto& reg = cluster.getRegion();
-			Composition lo(reg.getOrigin());
+			Composition lo = reg.getOrigin();
+			Composition hi = reg.getUpperLimitPoint();
 			
-			unsigned long int sizeSpec;
-			auto wConc = conc(clusterBins[i][j]); //effective size is weighted by concentration
+			unsigned long int sizeSpec; // size of cluster
+			double wConc; //effective size is weighted by concentration
 			
 			if (lo.isOnAxis(Species::V)){
-				sizeSpec = lo[Species::V]; //get size of cluster j in bin i if vac
+				sizeSpec = (hi[Species::V] -1.0 + lo[Species::V])/2; //get size of cluster j in bin i if vac
+				double width = (hi[Species::V]-1-lo[Species::V]); //check bin width
+				wConc = (width > 0.0) ? (width * conc(clusterBins[i][j])) : (conc(clusterBins[i][j]));  //get concentration of cluster j in bin i accounting for grouped cluster width
 			}
 			else if (lo.isOnAxis(Species::Basal)){
-				sizeSpec = lo[Species::Basal]; //get size of cluster j in bin i if basal
+				sizeSpec = (hi[Species::Basal] -1.0 + lo[Species::Basal])/2; //get size of cluster j in bin i if basal
+				double width = (hi[Species::Basal]-1-lo[Species::Basal]); //check bin width
+				wConc = (width > 0.0) ? (width * conc(clusterBins[i][j])) : (conc(clusterBins[i][j]));  //get concentration of cluster j in bin i accounting for grouped cluster width
 			}
 			else if (lo.isOnAxis(Species::I)){
-				sizeSpec = lo[Species::I]; //get size of cluster j in bin i if int
+				sizeSpec = (hi[Species::I] -1.0 + lo[Species::I])/2; //get size of cluster j in bin i if int
+				double width = (hi[Species::I]-1-lo[Species::I]); //check bin width
+				wConc = (width > 0.0) ? (width * conc(clusterBins[i][j])) : (conc(clusterBins[i][j]));  //get concentration of cluster j in bin i accounting for grouped cluster width
 			}
 			
-			num += wConc*sizeSpec;
-			denom += wConc;
+			num += wConc*sizeSpec; //sum of sizes weighted by concentration
+			denom += wConc; //sum of concentrations
 		
 			// sum concentrations for each bin
-			binConcs[i] += conc(clusterBins[i][j]);
+			binConcs[i] += wConc; //sum concentrations in each bin
 		}
-		binSizes[i] = num/denom;
+		binSizes[i] = num/denom; //calculate eff size for each bin
 	}
 	
 	
-	auto tableOne = getTableOne(conc, clusterBins, 0); //8x8 vector of reaction rates for TableOne reaction 
+	auto tableOne = getTableOne(conc, clusterBins, 0); //8x8 vector of reaction rates for TableOne reaction (these ALL include the concentrations of the reacting species)
 	auto tableTwo = getTableTwo(conc, clusterBins, 0); //8x8 vector of reaction rates for TableTwo reaction 
 	auto tableThree = getTableThree(conc, clusterBins, 0); //8x8 vector of reaction rates for TableThree reaction 
 	auto tableFour = getTableFour(conc, clusterBins, 0); //8x8 vector of reaction rates for TableFour reaction 
 	
 	for (auto i=0;i<totalVals.size();i++){
-		totalVals[i][0] = i;
-		totalVals[i][1] = binConcs[i];
-		totalVals[i][2] = binSizes[i];
+		totalVals[i][0] = i; //species id
+		totalVals[i][1] = binConcs[i]; //effective size for species i bin
+		totalVals[i][2] = binSizes[i]; //sum of concentrations for species i bin
 		for (auto j = 0;j<tableOne[i].size();j++){
-			totalVals[i][(4*j)+3] = tableOne[i][j];
-			totalVals[i][(4*j)+4] = tableTwo[i][j];
-			totalVals[i][(4*j)+5] = tableThree[i][j];
-			totalVals[i][(4*j)+6] = tableFour[i][j]; 
+			totalVals[i][(4*j)+3] = tableOne[i][j]; //rate of production of species i from reaction involving species j
+			totalVals[i][(4*j)+4] = tableTwo[i][j]; //rate of loss of species i from reaction producing species j
+			totalVals[i][(4*j)+5] = tableThree[i][j]; //rate of production of species i from dissociation of species j
+			totalVals[i][(4*j)+6] = tableFour[i][j]; //rate of dissociation of species i producing species j
 			
 		}
 	} 
-	// Open the output file
-	/*
-	const int outputPrecision = 5;
-		std::fstream outputFile;
-		outputFile.open(
-			getRxnOutputFileName(), std::fstream::out | std::fstream::app);
-		outputFile << std::setprecision(outputPrecision);
-		
-		for (auto i = 0; i < clusterBins.size(); i++){
-			for (auto j = 0; j < clusterBins[i].size(); j++){
-				outputFile << clusterBins[i][j]<<" ";
-			}
-			outputFile << std::endl;
-		}*/
+	
 }
 
 void
@@ -454,7 +453,7 @@ ZrReactionNetwork::writeRxnDataLine(
 		}
 	*/
 		// Set the output precision
-		const int outputPrecision = 5;
+		const int outputPrecision = 8;
 		
 		// Open the output file
 		std::fstream outputFile;
@@ -483,7 +482,6 @@ ZrReactionNetwork::writeRxnDataLine(
 		}
 		// Close the output file
 		outputFile.close();
-	
 }
 
 } // namespace network
