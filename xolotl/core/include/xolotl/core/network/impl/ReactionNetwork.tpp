@@ -529,6 +529,38 @@ ReactionNetwork<TImpl>::generateClusterData(const ClusterGenerator& generator)
 }
 
 template <typename TImpl>
+std::vector<std::vector<double>>
+ReactionNetwork<TImpl>::getAllProdRates(IndexType gridIndex)
+{
+	std::vector<std::vector<double>> toReturn;
+	auto vecPtr = &toReturn;
+
+	_reactions.template forEachOn<typename Traits::ProductionReactionType>(
+		"ReactionNetwork::getAllRates", DEVICE_LAMBDA(auto&& reaction) {
+			vecPtr->push_back(reaction.contributeRateVector(gridIndex));
+		});
+	Kokkos::fence();
+
+	return toReturn;
+}
+
+template <typename TImpl>
+std::vector<std::vector<double>>
+ReactionNetwork<TImpl>::getAllDissoRates(IndexType gridIndex)
+{
+	std::vector<std::vector<double>> toReturn;
+	auto vecPtr = &toReturn;
+
+	_reactions.template forEachOn<typename Traits::DissociationReactionType>(
+		"ReactionNetwork::getAllRates", DEVICE_LAMBDA(auto&& reaction) {
+			vecPtr->push_back(reaction.contributeRateVector(gridIndex));
+		});
+	Kokkos::fence();
+
+	return toReturn;
+}
+
+template <typename TImpl>
 void
 ReactionNetwork<TImpl>::computeAllFluxes(ConcentrationsView concentrations,
 	FluxesView fluxes, IndexType gridIndex, double surfaceDepth, double spacing)
@@ -631,17 +663,18 @@ ReactionNetwork<TImpl>::getLeftSideRate(
 
 template <typename TImpl>
 std::vector<std::vector<double>>
-ReactionNetwork<TImpl>::getTableOne(
-	ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins, IndexType gridIndex)
+ReactionNetwork<TImpl>::getTableOne(ConcentrationsView concentrations,
+	std::vector<std::vector<IndexType>> clusterBins, IndexType gridIndex)
 {
 	// Set up vector for rates of TableOne reactions
-	std::vector<std::vector<double>> rates (8, std::vector<double> (8,0));
+	std::vector<std::vector<double>> rates(8, std::vector<double>(8, 0));
 	auto ratesRef = std::ref(rates);
-	
+
 	// Loop on all the rates
 	_reactions.forEach(
-		"ReactionNetwork::getTableOne",DEVICE_LAMBDA(auto&& reaction) {
-			reaction.contributeTableOne(concentrations, clusterBins, ratesRef, gridIndex);
+		"ReactionNetwork::getTableOne", DEVICE_LAMBDA(auto&& reaction) {
+			reaction.contributeTableOne(
+				concentrations, clusterBins, ratesRef, gridIndex);
 		});
 	Kokkos::fence();
 	return rates;
@@ -649,17 +682,18 @@ ReactionNetwork<TImpl>::getTableOne(
 
 template <typename TImpl>
 std::vector<std::vector<double>>
-ReactionNetwork<TImpl>::getTableTwo(
-	ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins, IndexType gridIndex)
+ReactionNetwork<TImpl>::getTableTwo(ConcentrationsView concentrations,
+	std::vector<std::vector<IndexType>> clusterBins, IndexType gridIndex)
 {
 	// Set up vector for rates of TableTwo reactions
-	std::vector<std::vector<double>> rates (8, std::vector<double> (8,0));
+	std::vector<std::vector<double>> rates(8, std::vector<double>(8, 0));
 	auto ratesRef = std::ref(rates);
-	
+
 	// Loop on all the rates
 	_reactions.forEach(
-		"ReactionNetwork::getTableTwo",DEVICE_LAMBDA(auto&& reaction) {
-			reaction.contributeTableTwo(concentrations, clusterBins, ratesRef, gridIndex);
+		"ReactionNetwork::getTableTwo", DEVICE_LAMBDA(auto&& reaction) {
+			reaction.contributeTableTwo(
+				concentrations, clusterBins, ratesRef, gridIndex);
 		});
 	Kokkos::fence();
 	return rates;
@@ -667,17 +701,18 @@ ReactionNetwork<TImpl>::getTableTwo(
 
 template <typename TImpl>
 std::vector<std::vector<double>>
-ReactionNetwork<TImpl>::getTableThree(
-	ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins, IndexType gridIndex)
+ReactionNetwork<TImpl>::getTableThree(ConcentrationsView concentrations,
+	std::vector<std::vector<IndexType>> clusterBins, IndexType gridIndex)
 {
 	// Set up vector for rates of TableThree reactions
-	std::vector<std::vector<double>> rates (8, std::vector<double> (8,0));
+	std::vector<std::vector<double>> rates(8, std::vector<double>(8, 0));
 	auto ratesRef = std::ref(rates);
-	
+
 	// Loop on all the rates
 	_reactions.forEach(
-		"ReactionNetwork::getTableThree",DEVICE_LAMBDA(auto&& reaction) {
-			reaction.contributeTableThree(concentrations, clusterBins, ratesRef, gridIndex);
+		"ReactionNetwork::getTableThree", DEVICE_LAMBDA(auto&& reaction) {
+			reaction.contributeTableThree(
+				concentrations, clusterBins, ratesRef, gridIndex);
 		});
 	Kokkos::fence();
 	return rates;
@@ -685,24 +720,25 @@ ReactionNetwork<TImpl>::getTableThree(
 
 template <typename TImpl>
 std::vector<std::vector<double>>
-ReactionNetwork<TImpl>::getTableFour(
-	ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins, IndexType gridIndex)
+ReactionNetwork<TImpl>::getTableFour(ConcentrationsView concentrations,
+	std::vector<std::vector<IndexType>> clusterBins, IndexType gridIndex)
 {
 	// Set up vector for rates of TableFour reactions
-	std::vector<std::vector<double>> rates (8, std::vector<double> (8,0));
+	std::vector<std::vector<double>> rates(8, std::vector<double>(8, 0));
 	auto ratesRef = std::ref(rates);
-	
+
 	// Loop on all the rates
 	_reactions.forEach(
-		"ReactionNetwork::getTableFour",DEVICE_LAMBDA(auto&& reaction) {
-			reaction.contributeTableFour(concentrations, clusterBins, ratesRef, gridIndex);
+		"ReactionNetwork::getTableFour", DEVICE_LAMBDA(auto&& reaction) {
+			reaction.contributeTableFour(
+				concentrations, clusterBins, ratesRef, gridIndex);
 		});
 	Kokkos::fence();
-	for (auto i = 0; i < rates.size(); i++){
-			for (auto j = 0; j < rates[i].size(); j++){
-				std::cout << rates[i][j]<<" ";
-			}
-			std::cout << std::endl;
+	for (auto i = 0; i < rates.size(); i++) {
+		for (auto j = 0; j < rates[i].size(); j++) {
+			std::cout << rates[i][j] << " ";
+		}
+		std::cout << std::endl;
 	}
 	return rates;
 }

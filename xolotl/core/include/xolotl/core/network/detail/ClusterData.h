@@ -241,18 +241,18 @@ public:
 	{
 		setVal(_intVals, TRANSITION_SIZE, val);
 	}
-	
+
 	KOKKOS_INLINE_FUNCTION
 	double
 	dislocationDensity() const
 	{
 		return _floatVals[DISLOCATION_DENSITY];
 	}
-	
+
 	void
 	setDislocationDensity(double val)
 	{
-		setVal(_floatVals,DISLOCATION_DENSITY, val);
+		setVal(_floatVals, DISLOCATION_DENSITY, val);
 	}
 
 	KOKKOS_INLINE_FUNCTION

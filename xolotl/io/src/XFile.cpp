@@ -871,6 +871,50 @@ XFile::TimestepGroup::writeConcentrationDataset(
 	return;
 }
 
+void
+XFile::TimestepGroup::writeReactionDataset(
+	int size, double concArray[][4], bool write, int i)
+{
+	// Set the dataset name
+	std::stringstream datasetName;
+	if (i == 0)
+		datasetName << "production";
+	else
+		datasetName << "dissociation";
+
+	// Check the dataset
+	bool datasetExist =
+		H5Lexists(getId(), datasetName.str().c_str(), H5P_DEFAULT);
+
+	hid_t datasetId;
+	if (datasetExist) {
+		// Delete the link to it
+		H5Ldelete(getId(), datasetName.str().c_str(), H5P_DEFAULT);
+	}
+
+	// Create the dataspace for the dataset with dimension dims
+	std::array<hsize_t, 2> dims{(hsize_t)size, (hsize_t)4};
+	XFile::SimpleDataSpace<2> concDSpace(dims);
+	// Create the dataset of concentrations for this position
+	datasetId = H5Dcreate2(getId(), datasetName.str().c_str(), H5T_IEEE_F64LE,
+		concDSpace.getId(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+	// Create property list for independent dataset write.
+	hid_t propertyListId = H5Pcreate(H5P_DATASET_XFER);
+	CHK(H5Pset_dxpl_mpio(propertyListId, H5FD_MPIO_INDEPENDENT));
+
+	if (write) {
+		// Write concArray in the dataset
+		CHK(H5Dwrite(datasetId, H5T_IEEE_F64LE, H5S_ALL, H5S_ALL,
+			propertyListId, concArray));
+	}
+
+	// Close dataset
+	CHK(H5Dclose(datasetId));
+
+	return;
+}
+
 // Caller gives us 2D ragged representation, and we flatten it into
 // a 1D dataset and add a 1D "starting index" array.
 // Assumes that grid point slabs are assigned to processes in

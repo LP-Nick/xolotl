@@ -287,7 +287,7 @@ JSONOptions::readParams(int argc, const char* argv[])
 	checkSetParam(tree, "cascadeDose", cascadeDose);
 
 	checkSetParam(tree, "cascadeEfficiency", cascadeEfficiency);
-	
+
 	checkSetParam(tree, "dislocationDensity", dislocationDensity);
 
 	if (tree.count("petscArgs")) {

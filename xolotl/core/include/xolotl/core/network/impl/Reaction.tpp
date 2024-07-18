@@ -681,6 +681,17 @@ ProductionReaction<TNetwork, TDerived>::computeReducedConnectivity(
 
 template <typename TNetwork, typename TDerived>
 KOKKOS_INLINE_FUNCTION
+std::vector<double>
+ProductionReaction<TNetwork, TDerived>::computeRateVector(IndexType gridIndex)
+{
+	std::vector<double> toReturn = {_reactants[0], _reactants[1], _products[0],
+		this->_coefs(0, 0, 0, 0) * this->_rate(gridIndex)};
+
+	return toReturn;
+}
+
+template <typename TNetwork, typename TDerived>
+KOKKOS_INLINE_FUNCTION
 void
 ProductionReaction<TNetwork, TDerived>::computeFlux(
 	ConcentrationsView concentrations, FluxesView fluxes, IndexType gridIndex)
@@ -1840,22 +1851,24 @@ template <typename TNetwork, typename TDerived>
 KOKKOS_INLINE_FUNCTION
 double
 ProductionReaction<TNetwork, TDerived>::computeTableOne(
-	ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins, std::vector<std::vector<double>>& rates, IndexType gridIndex)
+	ConcentrationsView concentrations,
+	std::vector<std::vector<IndexType>> clusterBins,
+	std::vector<std::vector<double>>& rates, IndexType gridIndex)
 {
 	// Check what bins our clusters are in
-	auto binProduct = whichBin(clusterBins,_products[0]);
-	auto binReactant0 = whichBin(clusterBins,_reactants[0]);
-	auto binReactant1 = whichBin(clusterBins,_reactants[1]);
-	
-	if (binProduct < 0 || binReactant0 < 0 || binReactant1 < 0) {return 0.0;}
-	
+	auto binProduct = whichBin(clusterBins, _products[0]);
+	auto binReactant0 = whichBin(clusterBins, _reactants[0]);
+	auto binReactant1 = whichBin(clusterBins, _reactants[1]);
+
+	if (binProduct < 0 || binReactant0 < 0 || binReactant1 < 0) {
+		return 0.0;
+	}
+
 	auto productId = _products[0];
-	
-	
-	
+
 	auto rateTableOne = this->_rate(gridIndex) * concentrations[_reactants[1]] *
-			this->_coefs(0, 0, 0, 0) * concentrations[_reactants[0]];
-	
+		this->_coefs(0, 0, 0, 0) * concentrations[_reactants[0]];
+
 	if (binReactant0 == binReactant1)
 		rates[binProduct][binReactant0] += rateTableOne;
 	else {
@@ -1863,12 +1876,15 @@ ProductionReaction<TNetwork, TDerived>::computeTableOne(
 		rates[binProduct][binReactant1] += rateTableOne;
 	}
 	/*
-	std::cout << "product ID " << productId <<" product bin " << binProduct<<std::endl
-		<< "reactant0 ID " << _reactants[0]<<" reactant0 bin " << binReactant0<<std::endl
-		<< "reactant1 ID " << _reactants[1]<<" reactant1 bin " << binReactant1<<std::endl
+	std::cout << "product ID " << productId <<" product bin " <<
+	binProduct<<std::endl
+		<< "reactant0 ID " << _reactants[0]<<" reactant0 bin " <<
+	binReactant0<<std::endl
+		<< "reactant1 ID " << _reactants[1]<<" reactant1 bin " <<
+	binReactant1<<std::endl
 		<< "rate " << rateTableOne<<std::endl
 		<< std::endl;*/
-	
+
 	return 0.0;
 }
 
@@ -1876,24 +1892,28 @@ template <typename TNetwork, typename TDerived>
 KOKKOS_INLINE_FUNCTION
 double
 ProductionReaction<TNetwork, TDerived>::computeTableTwo(
-	ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins, std::vector<std::vector<double>>& rates, IndexType gridIndex)
+	ConcentrationsView concentrations,
+	std::vector<std::vector<IndexType>> clusterBins,
+	std::vector<std::vector<double>>& rates, IndexType gridIndex)
 {
-	auto binProduct = whichBin(clusterBins,_products[0]);
-	auto binReactant0 = whichBin(clusterBins,_reactants[0]);
-	auto binReactant1 = whichBin(clusterBins,_reactants[1]);
-	
-	if (binProduct < 0 || binReactant0 < 0 || binReactant1 < 0) {return 0.0;}
-	
-	auto rateTableTwo =	this->_rate(gridIndex) * concentrations[_reactants[1]] *
-			this->_coefs(0, 0, 0, 0) * concentrations[_reactants[0]];
-	
+	auto binProduct = whichBin(clusterBins, _products[0]);
+	auto binReactant0 = whichBin(clusterBins, _reactants[0]);
+	auto binReactant1 = whichBin(clusterBins, _reactants[1]);
+
+	if (binProduct < 0 || binReactant0 < 0 || binReactant1 < 0) {
+		return 0.0;
+	}
+
+	auto rateTableTwo = this->_rate(gridIndex) * concentrations[_reactants[1]] *
+		this->_coefs(0, 0, 0, 0) * concentrations[_reactants[0]];
+
 	if (binReactant0 == binReactant1)
 		rates[binReactant0][binProduct] += rateTableTwo;
 	else {
 		rates[binReactant0][binProduct] += rateTableTwo;
 		rates[binReactant1][binProduct] += rateTableTwo;
 	}
-	
+
 	return 0.0;
 }
 
@@ -2541,6 +2561,17 @@ DissociationReaction<TNetwork, TDerived>::computeReducedConnectivity(
 
 template <typename TNetwork, typename TDerived>
 KOKKOS_INLINE_FUNCTION
+std::vector<double>
+DissociationReaction<TNetwork, TDerived>::computeRateVector(IndexType gridIndex)
+{
+	std::vector<double> toReturn = {_reactant, _products[0], _products[1],
+		this->_coefs(0, 0, 0, 0) * this->_rate(gridIndex)};
+
+	return toReturn;
+}
+
+template <typename TNetwork, typename TDerived>
+KOKKOS_INLINE_FUNCTION
 void
 DissociationReaction<TNetwork, TDerived>::computeFlux(
 	ConcentrationsView concentrations, FluxesView fluxes, IndexType gridIndex)
@@ -3066,18 +3097,22 @@ template <typename TNetwork, typename TDerived>
 KOKKOS_INLINE_FUNCTION
 double
 DissociationReaction<TNetwork, TDerived>::computeTableThree(
-	ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins, std::vector<std::vector<double>>& rates, IndexType gridIndex)
+	ConcentrationsView concentrations,
+	std::vector<std::vector<IndexType>> clusterBins,
+	std::vector<std::vector<double>>& rates, IndexType gridIndex)
 {
 	// Check what bins our clusters are in
-	auto binProduct0 = whichBin(clusterBins,_products[0]);
-	auto binProduct1 = whichBin(clusterBins,_products[1]);
-	auto binReactant = whichBin(clusterBins,_reactant);
-	
-	if (binProduct0 < 0 || binProduct1 < 0 || binReactant < 0) {return 0.0;}
-	
-	auto rateTableThree = this->_rate(gridIndex) * concentrations[_reactant] * 
-						this->_coefs(0, 0, 0, 0);
-	
+	auto binProduct0 = whichBin(clusterBins, _products[0]);
+	auto binProduct1 = whichBin(clusterBins, _products[1]);
+	auto binReactant = whichBin(clusterBins, _reactant);
+
+	if (binProduct0 < 0 || binProduct1 < 0 || binReactant < 0) {
+		return 0.0;
+	}
+
+	auto rateTableThree = this->_rate(gridIndex) * concentrations[_reactant] *
+		this->_coefs(0, 0, 0, 0);
+
 	if (binProduct0 == binProduct1)
 		rates[binProduct0][binReactant] += rateTableThree;
 	else {
@@ -3092,18 +3127,22 @@ template <typename TNetwork, typename TDerived>
 KOKKOS_INLINE_FUNCTION
 double
 DissociationReaction<TNetwork, TDerived>::computeTableFour(
-	ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins, std::vector<std::vector<double>>& rates, IndexType gridIndex)
+	ConcentrationsView concentrations,
+	std::vector<std::vector<IndexType>> clusterBins,
+	std::vector<std::vector<double>>& rates, IndexType gridIndex)
 {
 	// Check what bins our clusters are in
-	auto binProduct0 = whichBin(clusterBins,_products[0]);
-	auto binProduct1 = whichBin(clusterBins,_products[1]);
-	auto binReactant = whichBin(clusterBins,_reactant);
-	
-	if (binProduct0 < 0 || binProduct1 < 0 || binReactant < 0) {return 0.0;}
-	
-	auto rateTableFour = this->_rate(gridIndex) * concentrations[_reactant] * 
-						this->_coefs(0, 0, 0, 0);
-	
+	auto binProduct0 = whichBin(clusterBins, _products[0]);
+	auto binProduct1 = whichBin(clusterBins, _products[1]);
+	auto binReactant = whichBin(clusterBins, _reactant);
+
+	if (binProduct0 < 0 || binProduct1 < 0 || binReactant < 0) {
+		return 0.0;
+	}
+
+	auto rateTableFour = this->_rate(gridIndex) * concentrations[_reactant] *
+		this->_coefs(0, 0, 0, 0);
+
 	if (binProduct0 == binProduct1)
 		rates[binReactant][binProduct0] += rateTableFour;
 	else {

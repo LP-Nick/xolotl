@@ -549,7 +549,8 @@ XolotlInterface::outputData(double time,
 	}
 
 	auto myData = std::vector<double>(network.getMonitorDataLineSize(), 0.0);
-	auto myRxnData = std::vector<std::vector<double>>(8,std::vector<double>(network.getRxnDataLineSize(), 0.0));
+	auto myRxnData = std::vector<std::vector<double>>(
+		8, std::vector<double>(network.getRxnDataLineSize(), 0.0));
 
 	for (auto xi = 0; xi < localSize; xi++) {
 		// Construct the full concentration vector first
@@ -566,7 +567,7 @@ XolotlInterface::outputData(double time,
 		deep_copy(dConcs, hConcs);
 
 		network.addMonitorDataValues(dConcs, 1.0, myData);
-		network.addRxnDataValues(dConcs,myRxnData);
+		network.addRxnDataValues(dConcs, myRxnData);
 	}
 
 	network.writeMonitorDataLine(myData, time);

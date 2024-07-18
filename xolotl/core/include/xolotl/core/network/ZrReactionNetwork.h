@@ -98,8 +98,8 @@ public:
 	}
 
 	void
-	writeRxnDataLine(
-		const std::vector<std::vector<double>>& localData, double time) override;
+	writeRxnDataLine(const std::vector<std::vector<double>>& localData,
+		double time) override;
 
 private:
 	double

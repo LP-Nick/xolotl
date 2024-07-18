@@ -42,7 +42,7 @@ computeXenonRetention(
 extern PetscErrorCode
 computeAlphaZr(
 	TS ts, PetscInt timestep, PetscReal time, Vec solution, void* ictx);
-	
+
 extern PetscErrorCode
 computeAlphaZrRxn(
 	TS ts, PetscInt timestep, PetscReal time, Vec solution, void* ictx);

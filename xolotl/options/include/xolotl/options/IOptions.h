@@ -614,7 +614,7 @@ public:
 	 */
 	virtual double
 	getCascadeEfficiency() const = 0;
-	
+
 	virtual double
 	getDislocationDensity() const = 0;
 };

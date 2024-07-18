@@ -263,6 +263,10 @@ public:
 		writeConcentrationDataset(int size, double concArray[][2], bool write,
 			int i, int j = -1, int k = -1);
 
+		void
+		writeReactionDataset(
+			int size, double concArray[][4], bool write, int i);
+
 		/**
 		 * Add a concentration dataset for all grid points in a 1D problem.
 		 * Caller gives us a 2D ragged representation, and we flatten

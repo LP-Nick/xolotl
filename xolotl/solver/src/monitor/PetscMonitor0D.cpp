@@ -145,13 +145,12 @@ PetscMonitor0D::setup(int loop)
 		// computeAlphaZr will be called at each timestep
 		PetscCallVoid(
 			TSMonitorSet(_ts, monitor::computeAlphaZr, this, nullptr));
-		
+
 		_solverHandler->getNetwork().writeRxnOutputHeader();
-		
+
 		// computeAlphaZrRxn will be called at each timestep
 		PetscCallVoid(
 			TSMonitorSet(_ts, monitor::computeAlphaZrRxn, this, nullptr));
-
 	}
 
 	// Set the monitor to compute the xenon content
@@ -253,7 +252,6 @@ PetscMonitor0D::setup(int loop)
 
 		// startStop0D will be called at each timestep
 		PetscCallVoid(TSMonitorSet(_ts, monitor::startStop, this, nullptr));
-		
 	}
 
 	// Set the monitor to simply change the previous time to the new time
@@ -306,6 +304,56 @@ PetscMonitor0D::startStop(
 	// Compute the dt
 	double previousTime = _solverHandler->getPreviousTime();
 	double dt = time - previousTime;
+
+	// Save the rate in HDF5
+	if (timestep == 1) {
+		auto& network = _solverHandler->getNetwork();
+
+		// Open the existing HDF5 file
+		auto xolotlComm = util::getMPIComm();
+		io::XFile checkpointFile(
+			_hdf5OutputName, xolotlComm, io::XFile::AccessMode::OpenReadWrite);
+
+		// Get the current time step
+		double currentTimeStep;
+		PetscCall(TSGetTimeStep(ts, &currentTimeStep));
+
+		// Add a concentration time step group for the current time step.
+		auto concGroup =
+			checkpointFile.getGroup<io::XFile::ConcentrationGroup>();
+		assert(concGroup);
+		auto tsGroup = concGroup->addTimestepGroup(
+			_loopNumber, timestep, time, previousTime, currentTimeStep);
+
+		// Production reactions
+		auto rateVector = network.getAllProdRates();
+		auto size = rateVector.size();
+
+		// Make it an array
+		double rateArray[size][4];
+		for (auto i = 0; i < size; i++) {
+			rateArray[i][0] = rateVector[i][0];
+			rateArray[i][1] = rateVector[i][1];
+			rateArray[i][2] = rateVector[i][2];
+			rateArray[i][3] = rateVector[i][3];
+		}
+
+		tsGroup->writeReactionDataset(size, rateArray, true, 0);
+
+		// Dissociation reactions
+		rateVector = network.getAllDissoRates();
+		size = rateVector.size();
+
+		// Make it an array
+		for (auto i = 0; i < size; i++) {
+			rateArray[i][0] = rateVector[i][0];
+			rateArray[i][1] = rateVector[i][1];
+			rateArray[i][2] = rateVector[i][2];
+			rateArray[i][3] = rateVector[i][3];
+		}
+
+		tsGroup->writeReactionDataset(size, rateArray, true, 1);
+	}
 
 	// Don't do anything if it is not on the stride
 	if (((PetscInt)((time + dt / 10.0) / _hdf5Stride) <= _hdf5Previous) &&
@@ -508,7 +556,7 @@ PetscMonitor0D::computeAlphaZrRxn(
 	TS ts, PetscInt timestep, PetscReal time, Vec solution)
 {
 	PetscFunctionBeginUser;
-	
+
 	// Compute the dt
 	double previousTime = _solverHandler->getPreviousTime();
 	double dt = time - previousTime;
@@ -517,7 +565,7 @@ PetscMonitor0D::computeAlphaZrRxn(
 	if (((PetscInt)((time + dt / 10.0) / _hdf5Stride) <= _hdf5Previous) &&
 		timestep > 0)
 		PetscFunctionReturn(0);
-	
+
 	// Get the da from ts
 	DM da;
 	PetscCall(TSGetDM(ts, &da));

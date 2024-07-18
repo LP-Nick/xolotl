@@ -350,11 +350,11 @@ protected:
 	 * Value of the remaining cascade efficiency.
 	 */
 	double cascadeEfficiency;
-	
+
 	double dislocationDensity;
 	/**
-	* Concentration of network dislocations in Zr lattice
-	*/
+	 * Concentration of network dislocations in Zr lattice
+	 */
 
 public:
 	/**

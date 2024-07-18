@@ -424,7 +424,8 @@ public:
 	 * @brief Append line of data values to Rxn output file
 	 */
 	virtual void
-	writeRxnDataLine(const std::vector<std::vector<double>>& localData, double time) = 0;
+	writeRxnDataLine(
+		const std::vector<std::vector<double>>& localData, double time) = 0;
 
 	/**
 	 * @brief Computes the map between the different cluster bounds and moment
@@ -468,6 +469,12 @@ public:
 
 	virtual PhaseSpace
 	getPhaseSpace() = 0;
+
+	virtual std::vector<std::vector<double>>
+	getAllProdRates(IndexType gridIndex = 0) = 0;
+
+	virtual std::vector<std::vector<double>>
+	getAllDissoRates(IndexType gridIndex = 0) = 0;
 
 	/**
 	 * @brief Updates the fluxes view with the rates from all the
@@ -519,20 +526,24 @@ public:
 		IndexType gridIndex) = 0;
 
 	virtual std::vector<std::vector<double>>
-	getTableOne(ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins,
+	getTableOne(ConcentrationsView concentrations,
+		std::vector<std::vector<IndexType>> clusterBins,
 		IndexType gridIndex) = 0;
 
 	virtual std::vector<std::vector<double>>
-	getTableTwo(ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins,
+	getTableTwo(ConcentrationsView concentrations,
+		std::vector<std::vector<IndexType>> clusterBins,
 		IndexType gridIndex) = 0;
 
 	virtual std::vector<std::vector<double>>
-	getTableThree(ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins,
+	getTableThree(ConcentrationsView concentrations,
+		std::vector<std::vector<IndexType>> clusterBins,
 		IndexType gridIndex) = 0;
 
 	virtual std::vector<std::vector<double>>
-	getTableFour(ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins,
-	IndexType gridIndex) = 0;
+	getTableFour(ConcentrationsView concentrations,
+		std::vector<std::vector<IndexType>> clusterBins,
+		IndexType gridIndex) = 0;
 
 	/**
 	 * Get the diagonal fill for the Jacobian, corresponding to the reactions.

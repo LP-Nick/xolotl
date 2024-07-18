@@ -297,7 +297,7 @@ public:
 	{
 		throw util::NotImplementedError();
 	}
-	
+
 	[[noreturn]] std::string
 	getRxnDataHeaderString() const override
 	{
@@ -307,7 +307,8 @@ public:
 	std::vector<std::vector<double>>
 	getRxnDataValues(Kokkos::View<const double*> conc) override
 	{
-		auto ret = std::vector<std::vector<double>> (8, std::vector<double>(getRxnDataLineSize(), 0.0));
+		auto ret = std::vector<std::vector<double>>(
+			8, std::vector<double>(getRxnDataLineSize(), 0.0));
 		addRxnDataValues(conc, ret);
 		return ret;
 	}
@@ -338,7 +339,7 @@ public:
 	{
 		throw util::NotImplementedError();
 	}
-	
+
 	std::uint64_t
 	getDeviceMemorySize() const noexcept override;
 
@@ -510,6 +511,12 @@ public:
 	{
 	}
 
+	std::vector<std::vector<double>>
+	getAllProdRates(IndexType gridIndex = 0) final;
+
+	std::vector<std::vector<double>>
+	getAllDissoRates(IndexType gridIndex = 0) final;
+
 	void
 	computeAllFluxes(ConcentrationsView concentrations, FluxesView fluxes,
 		IndexType gridIndex = 0, double surfaceDepth = 0.0,
@@ -599,19 +606,23 @@ public:
 		IndexType gridIndex) override;
 
 	std::vector<std::vector<double>>
-	getTableOne(ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins,
+	getTableOne(ConcentrationsView concentrations,
+		std::vector<std::vector<IndexType>> clusterBins,
 		IndexType gridIndex) override;
-		
+
 	std::vector<std::vector<double>>
-	getTableTwo(ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins,
+	getTableTwo(ConcentrationsView concentrations,
+		std::vector<std::vector<IndexType>> clusterBins,
 		IndexType gridIndex) override;
-		
+
 	std::vector<std::vector<double>>
-	getTableThree(ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins,
+	getTableThree(ConcentrationsView concentrations,
+		std::vector<std::vector<IndexType>> clusterBins,
 		IndexType gridIndex) override;
-		
+
 	std::vector<std::vector<double>>
-	getTableFour(ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins,
+	getTableFour(ConcentrationsView concentrations,
+		std::vector<std::vector<IndexType>> clusterBins,
 		IndexType gridIndex) override;
 
 	IndexType

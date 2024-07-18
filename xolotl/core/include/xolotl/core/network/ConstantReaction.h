@@ -197,6 +197,13 @@ private:
 	}
 
 	KOKKOS_INLINE_FUNCTION
+	std::vector<double>
+	computeRateVector(IndexType gridIndex)
+	{
+		return std::vector<double>();
+	}
+
+	KOKKOS_INLINE_FUNCTION
 	void
 	computeFlux(ConcentrationsView concentrations, FluxesView fluxes,
 		IndexType gridIndex)
@@ -324,23 +331,8 @@ private:
 
 	KOKKOS_INLINE_FUNCTION
 	double
-	computeTableOne(ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins,
-		std::vector<std::vector<double>>& rates,IndexType gridIndex)
-	{
-		return 0.0;
-	}
-
-	KOKKOS_INLINE_FUNCTION
-	double
-	computeTableTwo(ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins,
-		std::vector<std::vector<double>>& rates,IndexType gridIndex)
-	{
-		return 0.0;
-	}
-
-	KOKKOS_INLINE_FUNCTION
-	double
-	computeTableThree(ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins,
+	computeTableOne(ConcentrationsView concentrations,
+		std::vector<std::vector<IndexType>> clusterBins,
 		std::vector<std::vector<double>>& rates, IndexType gridIndex)
 	{
 		return 0.0;
@@ -348,7 +340,26 @@ private:
 
 	KOKKOS_INLINE_FUNCTION
 	double
-	computeTableFour(ConcentrationsView concentrations, std::vector<std::vector<IndexType>> clusterBins,
+	computeTableTwo(ConcentrationsView concentrations,
+		std::vector<std::vector<IndexType>> clusterBins,
+		std::vector<std::vector<double>>& rates, IndexType gridIndex)
+	{
+		return 0.0;
+	}
+
+	KOKKOS_INLINE_FUNCTION
+	double
+	computeTableThree(ConcentrationsView concentrations,
+		std::vector<std::vector<IndexType>> clusterBins,
+		std::vector<std::vector<double>>& rates, IndexType gridIndex)
+	{
+		return 0.0;
+	}
+
+	KOKKOS_INLINE_FUNCTION
+	double
+	computeTableFour(ConcentrationsView concentrations,
+		std::vector<std::vector<IndexType>> clusterBins,
 		std::vector<std::vector<double>>& rates, IndexType gridIndex)
 	{
 		return 0.0;

@@ -246,7 +246,8 @@ ZrDissociationReaction::computeBindingEnergy(double time)
 
 		double n = (double)(lo[Species::Basal] + hi[Species::Basal] - 1) / 2.0;
 		/*if (prod1Comp.isOnAxis(Species::Basal) ||
-			prod2Comp.isOnAxis(Species::Basal)) */{
+			prod2Comp.isOnAxis(Species::Basal)) */
+		{
 			if (n < this->_clusterData->transitionSize()) {
 				be = 1.762 +
 					((5.352 * sqrt(n - 1) + 0.122 * (n - 1) + 0.154 * (n - 1) -
@@ -300,8 +301,10 @@ ZrSinkReaction::computeRate(IndexType gridIndex, double time)
 	double anisotropy =
 		this->_clusterData->extraData.anisotropyRatio(_reactant, gridIndex);
 	double dislocationDensity = this->_clusterData->dislocationDensity();
-	double alphaZrASinkStrength = dislocationDensity*0.7631579; //fraction of total dislocation density for type A dislocations from single crystal data (7.25/9.5)
-	double alphaZrCSinkStrength = dislocationDensity*0.2368421;
+	double alphaZrASinkStrength = dislocationDensity *
+		0.7631579; // fraction of total dislocation density for type A
+				   // dislocations from single crystal data (7.25/9.5)
+	double alphaZrCSinkStrength = dislocationDensity * 0.2368421;
 
 	auto clReg = cl.getRegion();
 	Composition lo = clReg.getOrigin();
@@ -309,8 +312,7 @@ ZrSinkReaction::computeRate(IndexType gridIndex, double time)
 	if (lo.isOnAxis(Species::V)) {
 		return dc * 1.0 *
 			(alphaZrCSinkStrength * anisotropy +
-				alphaZrASinkStrength /
-					(anisotropy * anisotropy));
+				alphaZrASinkStrength / (anisotropy * anisotropy));
 	}
 
 	// 1-D diffusers are assumed to only interact with <a>-type edge dislocation
@@ -319,8 +321,7 @@ ZrSinkReaction::computeRate(IndexType gridIndex, double time)
 		if (lo[Species::I] < 9) {
 			return dc * 1.1 *
 				(alphaZrCSinkStrength * anisotropy +
-					alphaZrASinkStrength /
-						(anisotropy * anisotropy));
+					alphaZrASinkStrength / (anisotropy * anisotropy));
 		}
 		else if (lo[Species::I] == 9) {
 			return dc * 1.1 * (alphaZrASinkStrength);
