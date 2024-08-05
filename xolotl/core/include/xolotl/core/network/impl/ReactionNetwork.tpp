@@ -736,9 +736,9 @@ ReactionNetwork<TImpl>::getTableFour(ConcentrationsView concentrations,
 	Kokkos::fence();
 	for (auto i = 0; i < rates.size(); i++) {
 		for (auto j = 0; j < rates[i].size(); j++) {
-			std::cout << rates[i][j] << " ";
+			//std::cout << rates[i][j] << " ";
 		}
-		std::cout << std::endl;
+		//std::cout << std::endl;
 	}
 	return rates;
 }

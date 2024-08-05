@@ -288,7 +288,7 @@ ZrReactionNetwork::writeMonitorDataLine(
 		}
 
 		// Set the output precision
-		const int outputPrecision = 5;
+		const int outputPrecision = 9;
 
 		// Open the output file
 		std::fstream outputFile;
@@ -524,7 +524,7 @@ ZrReactionNetwork::writeRxnDataLine(
 					 << localData[8*i+6]<<" "<<localData[8*i+7]  << " "<<
 	std::endl;
 	}//
-	*/
+	
 	for (auto i = 0; i < localData.size(); i++) {
 		for (auto j = 0; j < localData[i].size(); j++) {
 			outputFile << localData[i][j] << " ";
@@ -533,7 +533,7 @@ ZrReactionNetwork::writeRxnDataLine(
 		outputFile << std::endl;
 	}
 	// Close the output file
-	outputFile.close();
+	outputFile.close(); */
 }
 
 } // namespace network
