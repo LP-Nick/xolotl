@@ -524,7 +524,7 @@ ZrReactionNetwork::writeRxnDataLine(
 					 << localData[8*i+6]<<" "<<localData[8*i+7]  << " "<<
 	std::endl;
 	}//
-	
+
 	for (auto i = 0; i < localData.size(); i++) {
 		for (auto j = 0; j < localData[i].size(); j++) {
 			outputFile << localData[i][j] << " ";

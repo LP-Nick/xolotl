@@ -146,6 +146,10 @@ private:
 		FISSION_RATE,
 		ZETA,
 		DISLOCATION_DENSITY,
+		I_FORMATION,
+		XE_FORMATION,
+		V_FORMATION,
+		V2_FORMATION,
 		NUM_FLOAT_VALS
 	};
 
@@ -162,6 +166,7 @@ private:
 		NUCLEATION,
 		SINK,
 		TRAP_MUTATION,
+		READ_RATES,
 		CONSTANT_REACTION,
 		NUM_BOOL_VALS
 	};
@@ -230,6 +235,57 @@ public:
 	}
 
 	KOKKOS_INLINE_FUNCTION
+	double
+	getIFormationEnergy() const
+	{
+		return _floatVals[I_FORMATION];
+	}
+
+	void
+	setIFormationEnergy(double val)
+	{
+		setVal(_floatVals, I_FORMATION, val);
+	}
+
+	KOKKOS_INLINE_FUNCTION
+	double
+	getVFormationEnergy() const
+	{
+		return _floatVals[V_FORMATION];
+	}
+
+	void
+	setVFormationEnergy(double val)
+	{
+		setVal(_floatVals, V_FORMATION, val);
+	}
+
+	KOKKOS_INLINE_FUNCTION
+	double
+	getV2FormationEnergy() const
+	{
+		return _floatVals[V2_FORMATION];
+	}
+
+	void
+	setV2FormationEnergy(double val)
+	{
+		setVal(_floatVals, V2_FORMATION, val);
+	}
+
+	KOKKOS_INLINE_FUNCTION
+	double
+	getXeFormationEnergy() const
+	{
+		return _floatVals[XE_FORMATION];
+	}
+
+	void
+	setXeFormationEnergy(double val)
+	{
+		setVal(_floatVals, XE_FORMATION, val);
+	}
+
 	int
 	transitionSize() const
 	{
@@ -322,6 +378,19 @@ public:
 
 	KOKKOS_INLINE_FUNCTION
 	bool
+	enableReadRates() const
+	{
+		return _boolVals[READ_RATES];
+	}
+
+	void
+	setEnableReadRates(bool val)
+	{
+		setVal(_boolVals, READ_RATES, val);
+	}
+
+	KOKKOS_INLINE_FUNCTION
+	bool
 	enableConstantReaction() const
 	{
 		return _boolVals[CONSTANT_REACTION];
@@ -371,6 +440,7 @@ private:
 public:
 	using Superclass = ClusterDataCommon<MemSpace>;
 	using ClusterGenerator = typename Traits::ClusterGenerator;
+	using ClusterUpdater = typename Types::ClusterUpdater;
 	using Subpaving =
 		plsm::MemSpaceSubpaving<MemSpace, typename Types::Subpaving>;
 	using TilesView = typename Subpaving::TilesView;
@@ -414,6 +484,12 @@ public:
 	void
 	generate(const ClusterGenerator& generator, double latticeParameter,
 		double interstitialBias, double impurityRadius);
+
+	void
+	updateDiffusionCoefficients();
+
+	IndexType
+	defineMomentIds();
 
 	TilesView tiles;
 	View<IndexType* [nMomentIds]> momentIds;

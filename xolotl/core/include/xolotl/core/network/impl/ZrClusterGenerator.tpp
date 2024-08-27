@@ -94,8 +94,11 @@ ZrClusterGenerator::select(const Region& region) const
 			return false;
 	}
 
-	if (region[Species::V].begin() == 0 && region[Species::I].begin() == 0 &&
-		region[Species::Basal].begin() > 0 &&
+	if (region[Species::Basal].begin() > 0 &&
+		region[Species::Basal].end() - 1 < 9)
+		return false;
+
+	if (region[Species::I].end() == 1 && region[Species::V].end() == 1 &&
 		region[Species::Basal].end() - 1 < 9)
 		return false;
 

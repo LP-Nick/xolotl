@@ -76,6 +76,7 @@ asVector(const boost::property_tree::iptree& node)
 JSONOptions::JSONOptions() = default;
 
 JSONOptions::JSONOptions(const JSONOptions& other) :
+	Options(other),
 	_map(std::make_unique<boost::property_tree::iptree>(*other._map))
 {
 }
@@ -111,7 +112,7 @@ JSONOptions::readParams(int argc, const char* argv[])
 
 	util::Log::setLevelThreshold(tree.get("logLevel", "info"));
 
-	checkSetParam(tree, "networkFile", networkFilename);
+	checkSetParam(tree, "restartFile", restartFile);
 
 	tempHandlerName = tree.get("tempHandler", "constant");
 
@@ -279,6 +280,8 @@ JSONOptions::readParams(int argc, const char* argv[])
 	checkSetParam(tree, "migrationThreshold", migrationThreshold);
 
 	checkSetParam(tree, "fluxDepthProfileFilePath", fluxDepthProfileFilePath);
+
+	checkSetParam(tree, "reactionFilePath", reactionFilePath);
 
 	checkSetParam(tree, "basalPortion", basalPortion);
 

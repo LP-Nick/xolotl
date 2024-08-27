@@ -316,6 +316,7 @@ protected:
 	const ClusterData* _clusterData;
 
 	IndexType _reactionId{invalidIndex};
+	double _deltaG0;
 
 	//! Reaction rate (k)
 	using RateSubView = decltype(std::declval<ReactionDataRef>().getRates(0));

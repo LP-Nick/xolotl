@@ -30,7 +30,6 @@ ReactionNetwork<TImpl>::ReactionNetwork(const Subpaving& subpaving,
 	Superclass(gridSize),
 	_subpaving(subpaving),
 	_clusterData("Cluster Data"),
-	_worker(*this),
 	_speciesLabelMap(createSpeciesLabelMap()),
 	_minRadiusSizes(computeMinRadiusSizes(opts))
 {
@@ -66,11 +65,19 @@ ReactionNetwork<TImpl>::ReactionNetwork(const Subpaving& subpaving,
 		}
 	}
 	this->setEnableReducedJacobian(useReduced);
+	if (opts.getReactionFilePath().length() > 0)
+		this->setEnableReadRates(true);
+	else
+		this->setEnableReadRates(false);
+
+	readClusters(opts.getReactionFilePath());
 
 	this->_numClusters = _clusterData.h_view().numClusters;
 	asDerived()->initializeExtraClusterData(opts);
 	generateClusterData(ClusterGenerator{opts});
 	defineMomentIds();
+
+	readReactions(opts.getTempParam(), opts.getReactionFilePath());
 
 	// Skip the reactions for now if using constant reactions
 	if (map["constant"])
@@ -239,6 +246,14 @@ void
 ReactionNetwork<TImpl>::setEnableReducedJacobian(bool reduced)
 {
 	this->_enableReducedJacobian = reduced;
+}
+
+template <typename TImpl>
+void
+ReactionNetwork<TImpl>::setEnableReadRates(bool read)
+{
+	this->_enableReadRates = read;
+	_clusterData.h_view().setEnableReadRates(this->_enableReadRates);
 }
 
 template <typename TImpl>
@@ -449,7 +464,6 @@ ReactionNetwork<TImpl>::setConstantConnectivities(
 {
 	asDerived()->setConstantConnectivities(conns);
 }
-
 template <typename TImpl>
 void
 ReactionNetwork<TImpl>::initializeRateEntries(
@@ -516,7 +530,8 @@ template <typename TImpl>
 void
 ReactionNetwork<TImpl>::updateDiffusionCoefficients()
 {
-	_worker.updateDiffusionCoefficients();
+	_clusterData.h_view().updateDiffusionCoefficients();
+	invalidateDataMirror();
 }
 
 template <typename TImpl>
@@ -736,9 +751,9 @@ ReactionNetwork<TImpl>::getTableFour(ConcentrationsView concentrations,
 	Kokkos::fence();
 	for (auto i = 0; i < rates.size(); i++) {
 		for (auto j = 0; j < rates[i].size(); j++) {
-			//std::cout << rates[i][j] << " ";
+			// std::cout << rates[i][j] << " ";
 		}
-		//std::cout << std::endl;
+		// std::cout << std::endl;
 	}
 	return rates;
 }
@@ -1089,8 +1104,7 @@ ReactionNetwork<TImpl>::getTotalsImpl(ConcentrationsView concentrations,
 		Kokkos::View<double*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>(
 			result.data(), result.size());
 
-	Kokkos::parallel_reduce("ReactionNetworkWorker::getTotals",
-		this->_numClusters,
+	Kokkos::parallel_reduce("ReactionNetwork::getTotals", this->_numClusters,
 		TotalQuantityReduceFunctor<TImpl, TQMethods...>{
 			concentrations, tiles, clusterData, quantities},
 		temp);
@@ -1322,7 +1336,24 @@ double
 ReactionNetwork<TImpl>::getTotalConcentration(
 	ConcentrationsView concentrations, Species type, AmountType minSize)
 {
-	return _worker.getTotalConcentration(concentrations, type, minSize);
+	auto tiles = _subpaving.getTiles();
+	double conc = 0.0;
+	Kokkos::parallel_reduce(
+		"ReactionNetwork::getTotalConcentration", this->_numClusters,
+		KOKKOS_LAMBDA(IndexType i, double& lsum) {
+			using util::max;
+			const auto& clReg = tiles(i).getRegion();
+			const auto& ival = clReg[type];
+			const auto factor = clReg.volume() / ival.length();
+			for (auto j = max(minSize, ival.begin()); j < ival.end(); ++j) {
+				lsum += concentrations(i) * factor;
+			}
+		},
+		conc);
+
+	Kokkos::fence();
+
+	return conc;
 }
 
 template <typename TImpl>
@@ -1330,7 +1361,26 @@ double
 ReactionNetwork<TImpl>::getTotalRadiusConcentration(
 	ConcentrationsView concentrations, Species type, AmountType minSize)
 {
-	return _worker.getTotalRadiusConcentration(concentrations, type, minSize);
+	auto tiles = _subpaving.getTiles();
+	double conc = 0.0;
+	auto clusterData = _clusterData.d_view;
+	Kokkos::parallel_reduce(
+		"ReactionNetwork::getTotalRadiusConcentration", this->_numClusters,
+		KOKKOS_LAMBDA(IndexType i, double& lsum) {
+			using util::max;
+			const auto& clReg = tiles(i).getRegion();
+			const auto& ival = clReg[type];
+			const auto factor = clReg.volume() / ival.length();
+			for (auto j = max(minSize, ival.begin()); j < ival.end(); ++j) {
+				lsum += concentrations(i) * clusterData().reactionRadius(i) *
+					factor;
+			}
+		},
+		conc);
+
+	Kokkos::fence();
+
+	return conc;
 }
 
 template <typename TImpl>
@@ -1338,7 +1388,24 @@ double
 ReactionNetwork<TImpl>::getTotalAtomConcentration(
 	ConcentrationsView concentrations, Species type, AmountType minSize)
 {
-	return _worker.getTotalAtomConcentration(concentrations, type, minSize);
+	auto tiles = _subpaving.getTiles();
+	double conc = 0.0;
+	Kokkos::parallel_reduce(
+		"ReactionNetwork::getTotalAtomConcentration", this->_numClusters,
+		KOKKOS_LAMBDA(IndexType i, double& lsum) {
+			using util::max;
+			const auto& clReg = tiles(i).getRegion();
+			const auto& ival = clReg[type];
+			const auto factor = clReg.volume() / ival.length();
+			for (auto j = max(minSize, ival.begin()); j < ival.end(); ++j) {
+				lsum += concentrations(i) * j * factor;
+			}
+		},
+		conc);
+
+	Kokkos::fence();
+
+	return conc;
 }
 
 template <typename TImpl>
@@ -1380,6 +1447,140 @@ ReactionNetwork<TImpl>::getTotalTrappedAtomConcentration(
 	Kokkos::fence();
 
 	return conc;
+}
+
+template <typename TImpl>
+double
+ReactionNetwork<TImpl>::getTotalVolumeRatio(
+	ConcentrationsView concentrations, Species type, AmountType minSize)
+{
+	// Find the vacancy index
+	constexpr auto speciesRangeNoI = getSpeciesRangeNoI();
+	bool hasVacancy = false;
+	Species vIndex;
+	for (auto i : speciesRangeNoI) {
+		if (isVacancy(i)) {
+			hasVacancy = true;
+			vIndex = i;
+		}
+	}
+
+	// Return 0 if there is not vacancy in the network
+	if (!hasVacancy)
+		return 0.0;
+
+	// Ratio times volume
+	auto tiles = _subpaving.getTiles();
+	double conc = 0.0;
+	auto clusterData = _clusterData.d_view;
+	Kokkos::parallel_reduce(
+		"ReactionNetwork::getTotalVolumeRatio", this->_numClusters,
+		KOKKOS_LAMBDA(IndexType i, double& lsum) {
+			const Region& clReg = tiles(i).getRegion();
+			if (clReg[vIndex].begin() > 0) {
+				const auto radius = clusterData().reactionRadius(i);
+				const double bubbleVolume = radius * radius * radius;
+				for (AmountType j : makeIntervalRange(clReg[type])) {
+					if (j >= minSize) {
+						for (AmountType l : makeIntervalRange(clReg[vIndex])) {
+							lsum += concentrations(i) * (double)j *
+								bubbleVolume / (double)l;
+						}
+					}
+				}
+			}
+		},
+		conc);
+
+	// Volume
+	double volume = 0.0;
+	Kokkos::parallel_reduce(
+		"ReactionNetwork::getTotalVolumeRatio", this->_numClusters,
+		KOKKOS_LAMBDA(IndexType i, double& lsum) {
+			const Region& clReg = tiles(i).getRegion();
+			if (clReg[vIndex].begin() > 0) {
+				const auto factor = clReg.volume() / clReg[type].length();
+				const auto radius = clusterData().reactionRadius(i);
+				const double bubbleVolume = radius * radius * radius;
+				for (AmountType j : makeIntervalRange(clReg[type])) {
+					if (j >= minSize) {
+						lsum += concentrations(i) * bubbleVolume * factor;
+					}
+				}
+			}
+		},
+		volume);
+
+	Kokkos::fence();
+
+	return conc / volume;
+}
+
+template <typename TImpl>
+double
+ReactionNetwork<TImpl>::getTotalRatioVariance(ConcentrationsView concentrations,
+	Species type, double mean, AmountType minSize)
+{
+	// Find the vacancy index
+	constexpr auto speciesRangeNoI = getSpeciesRangeNoI();
+	bool hasVacancy = false;
+	Species vIndex;
+	for (auto i : speciesRangeNoI) {
+		if (isVacancy(i)) {
+			hasVacancy = true;
+			vIndex = i;
+		}
+	}
+
+	// Return 0 if there is not vacancy in the network
+	if (!hasVacancy)
+		return 0.0;
+
+	// Distance times volume
+	auto tiles = _subpaving.getTiles();
+	double conc = 0.0;
+	auto clusterData = _clusterData.d_view;
+	Kokkos::parallel_reduce(
+		"ReactionNetwork::getTotalVolumeRatio", this->_numClusters,
+		KOKKOS_LAMBDA(IndexType i, double& lsum) {
+			const Region& clReg = tiles(i).getRegion();
+			if (clReg[vIndex].begin() > 0) {
+				const auto radius = clusterData().reactionRadius(i);
+				const double bubbleVolume = radius * radius * radius;
+				for (AmountType j : makeIntervalRange(clReg[type])) {
+					if (j >= minSize) {
+						for (AmountType l : makeIntervalRange(clReg[vIndex])) {
+							auto d = ((double)j / (double)l) - mean;
+							lsum += d * d * concentrations(i) * bubbleVolume;
+						}
+					}
+				}
+			}
+		},
+		conc);
+
+	// Volume
+	double volume = 0.0;
+	Kokkos::parallel_reduce(
+		"ReactionNetwork::getTotalVolumeRatio", this->_numClusters,
+		KOKKOS_LAMBDA(IndexType i, double& lsum) {
+			const Region& clReg = tiles(i).getRegion();
+			if (clReg[vIndex].begin() > 0) {
+				const auto factor = clReg.volume() / clReg[type].length();
+				const auto radius = clusterData().reactionRadius(i);
+				const double bubbleVolume = radius * radius * radius;
+				for (AmountType j : makeIntervalRange(clReg[type])) {
+					if (j >= minSize) {
+						lsum += concentrations(i) * bubbleVolume * factor;
+					}
+				}
+			}
+		},
+		volume);
+
+	Kokkos::fence();
+
+	return conc / volume;
 }
 
 template <typename TImpl>
@@ -1465,7 +1666,29 @@ double
 ReactionNetwork<TImpl>::getTotalVolumeFraction(
 	ConcentrationsView concentrations, Species type, AmountType minSize)
 {
-	return _worker.getTotalVolumeFraction(concentrations, type, minSize);
+	auto tiles = _subpaving.getTiles();
+	double conc = 0.0;
+	auto clusterData = _clusterData.d_view;
+	Kokkos::parallel_reduce(
+		"ReactionNetwork::getTotalVolumeFraction", this->_numClusters,
+		KOKKOS_LAMBDA(IndexType i, double& lsum) {
+			using util::max;
+			const auto& clReg = tiles(i).getRegion();
+			const auto& ival = clReg[type];
+			const auto factor = clReg.volume() / ival.length();
+			const auto rRad = clusterData().reactionRadius(i);
+			const auto rRad3 = rRad * rRad * rRad;
+			for (auto j = max(minSize, ival.begin()); j < ival.end(); ++j) {
+				lsum += concentrations(i) * rRad3 * factor;
+			}
+		},
+		conc);
+
+	Kokkos::fence();
+
+	constexpr double sphereFactor = 4.0 * ::xolotl::core::pi / 3.0;
+
+	return conc * sphereFactor;
 }
 
 template <typename TImpl>
@@ -1498,14 +1721,35 @@ template <typename TImpl>
 void
 ReactionNetwork<TImpl>::defineMomentIds()
 {
-	_worker.defineMomentIds();
+	auto nMomentIds = _clusterData.h_view().defineMomentIds();
+	this->_numDOFs = _clusterData.h_view().numClusters + nMomentIds;
+	invalidateDataMirror();
+}
+
+template <typename TImpl>
+void
+ReactionNetwork<TImpl>::readClusters(const std::string filename)
+{
+	asDerived()->readClusters(filename);
+}
+
+template <typename TImpl>
+void
+ReactionNetwork<TImpl>::readReactions(
+	double temperature, const std::string filename)
+{
+	asDerived()->readReactions(temperature, filename);
 }
 
 template <typename TImpl>
 void
 ReactionNetwork<TImpl>::defineReactions(Connectivity& connectivity)
 {
-	_worker.defineReactions(connectivity);
+	auto generator = asDerived()->getReactionGenerator();
+	generator.setConstantConnectivities(
+		_constantConnsRows, _constantConnsEntries);
+	_reactions = generator.generateReactions();
+	connectivity = generator.getConnectivity();
 }
 
 template <typename TImpl>
@@ -1545,212 +1789,6 @@ ReactionNetwork<TImpl>::getDiagonalFill(SparseFillMap& fillMap)
 
 namespace detail
 {
-template <typename TImpl>
-void
-ReactionNetworkWorker<TImpl>::updateDiffusionCoefficients()
-{
-	using Range2D = Kokkos::MDRangePolicy<Kokkos::Rank<2>>;
-	auto clusterData = _nw._clusterData.d_view;
-	auto updater = typename Network::ClusterUpdater{};
-	Kokkos::parallel_for(
-		"ReactionNetworkWorker::updateDiffusionCoefficients",
-		Range2D({0, 0},
-			{_nw._clusterData.h_view().numClusters,
-				_nw._clusterData.h_view().gridSize}),
-		KOKKOS_LAMBDA(IndexType i, IndexType j) {
-			if (!util::equal(clusterData().diffusionFactor(i), 0.0)) {
-				updater.updateDiffusionCoefficient(clusterData(), i, j);
-			}
-		});
-	Kokkos::fence();
-	_nw.invalidateDataMirror();
-}
-
-template <typename TImpl>
-void
-ReactionNetworkWorker<TImpl>::defineMomentIds()
-{
-	constexpr auto speciesRange = Network::getSpeciesRangeForGrouping();
-
-	auto nClusters = _nw._clusterData.h_view().numClusters;
-	auto counts = Kokkos::View<IndexType*>("Moment Id Counts", nClusters);
-
-	auto data = _nw._clusterData.d_view.data();
-
-	IndexType nMomentIds = 0;
-	Kokkos::parallel_reduce(
-		"ReactionNetworkWorker::defineMomentIds::count", nClusters,
-		KOKKOS_LAMBDA(const IndexType i, IndexType& running) {
-			const auto& reg = data->getCluster(i).getRegion();
-			IndexType count = 0;
-			for (auto k : speciesRange) {
-				if (reg[k].length() != 1) {
-					++count;
-				}
-			}
-			running += count;
-			counts(i) = count;
-		},
-		nMomentIds);
-
-	Kokkos::parallel_scan(
-		"ReactionNetworkWorker::defineMomentIds::scan", nClusters,
-		KOKKOS_LAMBDA(IndexType i, IndexType & update, const bool finalPass) {
-			const auto temp = counts(i);
-			if (finalPass) {
-				counts(i) = update;
-			}
-			update += temp;
-		});
-
-	Kokkos::parallel_for(
-		"ReactionNetworkWorker::defineMomentIds::assignMomentIds", nClusters,
-		KOKKOS_LAMBDA(const IndexType i) {
-			for (IndexType j = 0; j < data->momentIds.extent(1); ++j) {
-				data->momentIds(i, j) = Network::invalidIndex();
-			}
-
-			const auto& reg = data->getCluster(i).getRegion();
-			IndexType current = counts(i);
-			for (auto k : speciesRange) {
-				if (reg[k].length() == 1) {
-					if (data->momentIds(i, Network::mapToMomentId(k)) ==
-						nClusters + current - 1)
-						continue;
-					data->momentIds(i, Network::mapToMomentId(k)) =
-						Network::invalidIndex();
-				}
-				else {
-					data->momentIds(i, Network::mapToMomentId(k)) =
-						nClusters + current;
-					++current;
-				}
-			}
-		});
-
-	Kokkos::fence();
-	_nw._numDOFs = nClusters + nMomentIds;
-	_nw.invalidateDataMirror();
-}
-
-template <typename TImpl>
-void
-ReactionNetworkWorker<TImpl>::defineReactions(Connectivity& connectivity)
-{
-	auto generator = _nw.asDerived()->getReactionGenerator();
-	generator.setConstantConnectivities(
-		_nw._constantConnsRows, _nw._constantConnsEntries);
-	_nw._reactions = generator.generateReactions();
-	connectivity = generator.getConnectivity();
-}
-
-template <typename TImpl>
-double
-ReactionNetworkWorker<TImpl>::getTotalConcentration(
-	ConcentrationsView concentrations, Species type, AmountType minSize)
-{
-	auto tiles = _nw._subpaving.getTiles();
-	double conc = 0.0;
-	Kokkos::parallel_reduce(
-		"ReactionNetworkWorker::getTotalConcentration", _nw._numClusters,
-		KOKKOS_LAMBDA(IndexType i, double& lsum) {
-			using util::max;
-			const auto& clReg = tiles(i).getRegion();
-			const auto& ival = clReg[type];
-			const auto factor = clReg.volume() / ival.length();
-			for (auto j = max(minSize, ival.begin()); j < ival.end(); ++j) {
-				lsum += concentrations(i) * factor;
-			}
-		},
-		conc);
-
-	Kokkos::fence();
-
-	return conc;
-}
-
-template <typename TImpl>
-double
-ReactionNetworkWorker<TImpl>::getTotalRadiusConcentration(
-	ConcentrationsView concentrations, Species type, AmountType minSize)
-{
-	auto tiles = _nw._subpaving.getTiles();
-	double conc = 0.0;
-	auto clusterData = _nw._clusterData.d_view;
-	Kokkos::parallel_reduce(
-		"ReactionNetworkWorker::getTotalRadiusConcentration", _nw._numClusters,
-		KOKKOS_LAMBDA(IndexType i, double& lsum) {
-			using util::max;
-			const auto& clReg = tiles(i).getRegion();
-			const auto& ival = clReg[type];
-			const auto factor = clReg.volume() / ival.length();
-			for (auto j = max(minSize, ival.begin()); j < ival.end(); ++j) {
-				lsum += concentrations(i) * clusterData().reactionRadius(i) *
-					factor;
-			}
-		},
-		conc);
-
-	Kokkos::fence();
-
-	return conc;
-}
-
-template <typename TImpl>
-double
-ReactionNetworkWorker<TImpl>::getTotalAtomConcentration(
-	ConcentrationsView concentrations, Species type, AmountType minSize)
-{
-	auto tiles = _nw._subpaving.getTiles();
-	double conc = 0.0;
-	Kokkos::parallel_reduce(
-		"ReactionNetworkWorker::getTotalAtomConcentration", _nw._numClusters,
-		KOKKOS_LAMBDA(IndexType i, double& lsum) {
-			using util::max;
-			const auto& clReg = tiles(i).getRegion();
-			const auto& ival = clReg[type];
-			const auto factor = clReg.volume() / ival.length();
-			for (auto j = max(minSize, ival.begin()); j < ival.end(); ++j) {
-				lsum += concentrations(i) * j * factor;
-			}
-		},
-		conc);
-
-	Kokkos::fence();
-
-	return conc;
-}
-
-template <typename TImpl>
-double
-ReactionNetworkWorker<TImpl>::getTotalVolumeFraction(
-	ConcentrationsView concentrations, Species type, AmountType minSize)
-{
-	auto tiles = _nw._subpaving.getTiles();
-	double conc = 0.0;
-	auto clusterData = _nw._clusterData.d_view;
-	Kokkos::parallel_reduce(
-		"ReactionNetworkWorker::getTotalVolumeFraction", _nw._numClusters,
-		KOKKOS_LAMBDA(IndexType i, double& lsum) {
-			using util::max;
-			const auto& clReg = tiles(i).getRegion();
-			const auto& ival = clReg[type];
-			const auto factor = clReg.volume() / ival.length();
-			const auto rRad = clusterData().reactionRadius(i);
-			const auto rRad3 = rRad * rRad * rRad;
-			for (auto j = max(minSize, ival.begin()); j < ival.end(); ++j) {
-				lsum += concentrations(i) * rRad3 * factor;
-			}
-		},
-		conc);
-
-	Kokkos::fence();
-
-	constexpr double sphereFactor = 4.0 * ::xolotl::core::pi / 3.0;
-
-	return conc * sphereFactor;
-}
-
 template <typename TImpl>
 KOKKOS_INLINE_FUNCTION
 void
