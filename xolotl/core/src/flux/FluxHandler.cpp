@@ -133,8 +133,12 @@ FluxHandler::syncFluxIndices()
 void
 FluxHandler::syncIncidentFluxVec()
 {
-	incidentFlux = Kokkos::View<double**>(
-		"Incident Flux Vec", incidentFluxVec.size(), incidentFluxVec[0].size());
+	if (incidentFluxVec.size() == 0) {
+		incidentFlux = Kokkos::View<double**>();
+	}
+	else
+		incidentFlux = Kokkos::View<double**>("Incident Flux Vec",
+			incidentFluxVec.size(), incidentFluxVec[0].size());
 	auto incidentFlux_h = create_mirror_view(incidentFlux);
 	for (std::size_t i = 0; i < incidentFluxVec.size(); ++i) {
 		for (std::size_t j = 0; j < incidentFluxVec[i].size(); ++j) {

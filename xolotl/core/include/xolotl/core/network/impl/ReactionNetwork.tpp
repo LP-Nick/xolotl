@@ -544,33 +544,50 @@ ReactionNetwork<TImpl>::generateClusterData(const ClusterGenerator& generator)
 }
 
 template <typename TImpl>
-std::vector<std::vector<double>>
+Kokkos::View<double**>
 ReactionNetwork<TImpl>::getAllProdRates(IndexType gridIndex)
 {
-	std::vector<std::vector<double>> toReturn;
-	auto vecPtr = &toReturn;
+	// Create the views at the correct side and for the device
+	auto prodReactions =
+		_reactions.template getView<typename Traits::ProductionReactionType>();
+	int nReactions = prodReactions.size();
+	RateConstantView toReturn =
+		Kokkos::View<double**>("Production Rates", nReactions, 4);
+	auto dToReturn = create_mirror_view(toReturn);
 
-	_reactions.template forEachOn<typename Traits::ProductionReactionType>(
-		"ReactionNetwork::getAllRates", DEVICE_LAMBDA(auto&& reaction) {
-			vecPtr->push_back(reaction.contributeRateVector(gridIndex));
+	Kokkos::parallel_for(
+		nReactions, KOKKOS_LAMBDA(const IndexType i) {
+			prodReactions(i).contributeRateVector(dToReturn, i, gridIndex);
 		});
 	Kokkos::fence();
+
+	// Copy the data back for the host
+	deep_copy(toReturn, dToReturn);
 
 	return toReturn;
 }
 
 template <typename TImpl>
-std::vector<std::vector<double>>
+Kokkos::View<double**>
 ReactionNetwork<TImpl>::getAllDissoRates(IndexType gridIndex)
 {
-	std::vector<std::vector<double>> toReturn;
-	auto vecPtr = &toReturn;
+	// Create the views at the correct side and for the device
+	auto dissoReactions =
+		_reactions
+			.template getView<typename Traits::DissociationReactionType>();
+	int nReactions = dissoReactions.size();
+	RateConstantView toReturn =
+		Kokkos::View<double**>("Dissociation Rates", nReactions, 4);
+	auto dToReturn = create_mirror_view(toReturn);
 
-	_reactions.template forEachOn<typename Traits::DissociationReactionType>(
-		"ReactionNetwork::getAllRates", DEVICE_LAMBDA(auto&& reaction) {
-			vecPtr->push_back(reaction.contributeRateVector(gridIndex));
+	Kokkos::parallel_for(
+		nReactions, KOKKOS_LAMBDA(const IndexType i) {
+			dissoReactions(i).contributeRateVector(dToReturn, i, gridIndex);
 		});
 	Kokkos::fence();
+
+	// Copy the data back for the host
+	deep_copy(toReturn, dToReturn);
 
 	return toReturn;
 }

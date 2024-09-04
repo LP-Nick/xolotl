@@ -80,6 +80,7 @@ public:
 	using SubMapView = typename IReactionNetwork::SubMapView;
 	using OwnedSubMapView = typename IReactionNetwork::OwnedSubMapView;
 	using BelongingView = typename IReactionNetwork::BelongingView;
+	using RateConstantView = typename IReactionNetwork::RateConstantView;
 	using SparseFillMap = typename IReactionNetwork::SparseFillMap;
 	using ClusterData = typename Types::ClusterData;
 	using ClusterDataMirror = typename Types::ClusterDataMirror;
@@ -510,10 +511,10 @@ public:
 	{
 	}
 
-	std::vector<std::vector<double>>
+	RateConstantView
 	getAllProdRates(IndexType gridIndex = 0) final;
 
-	std::vector<std::vector<double>>
+	RateConstantView
 	getAllDissoRates(IndexType gridIndex = 0) final;
 
 	void

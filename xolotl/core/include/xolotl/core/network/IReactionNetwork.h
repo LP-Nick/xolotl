@@ -38,6 +38,7 @@ public:
 	using SubMapView = Kokkos::View<AmountType*, Kokkos::MemoryUnmanaged>;
 	using OwnedSubMapView = Kokkos::View<AmountType*>;
 	using BelongingView = Kokkos::View<bool*>;
+	using RateConstantView = Kokkos::View<double**>;
 	using Connectivity = detail::ClusterConnectivity<>;
 	using SparseFillMap = std::unordered_map<int, std::vector<int>>;
 	using Bounds = std::vector<std::vector<AmountType>>;
@@ -482,10 +483,10 @@ public:
 	virtual PhaseSpace
 	getPhaseSpace() = 0;
 
-	virtual std::vector<std::vector<double>>
+	virtual RateConstantView
 	getAllProdRates(IndexType gridIndex = 0) = 0;
 
-	virtual std::vector<std::vector<double>>
+	virtual RateConstantView
 	getAllDissoRates(IndexType gridIndex = 0) = 0;
 
 	/**

@@ -51,6 +51,7 @@ public:
 	using ConnectivitiesPairView = IReactionNetwork::ConnectivitiesPairView;
 	using BelongingView = IReactionNetwork::BelongingView;
 	using OwnedSubMapView = IReactionNetwork::OwnedSubMapView;
+	using RateConstantView = IReactionNetwork::RateConstantView;
 	using Connectivity = typename IReactionNetwork::Connectivity;
 	using ReactionDataRef = typename Types::ReactionDataRef;
 	using ClusterData = typename Types::ClusterData;
@@ -105,10 +106,11 @@ public:
 	}
 
 	KOKKOS_INLINE_FUNCTION
-	std::vector<double>
-	contributeRateVector(IndexType gridIndex)
+	void
+	contributeRateVector(
+		RateConstantView toReturn, IndexType id, IndexType gridIndex)
 	{
-		return asDerived()->computeRateVector(gridIndex);
+		return asDerived()->computeRateVector(toReturn, id, gridIndex);
 	}
 
 	KOKKOS_INLINE_FUNCTION
@@ -365,6 +367,7 @@ public:
 	using ConnectivitiesPairView = typename Superclass::ConnectivitiesPairView;
 	using BelongingView = typename Superclass::BelongingView;
 	using OwnedSubMapView = typename Superclass::OwnedSubMapView;
+	using RateConstantView = typename Superclass::RateConstantView;
 	using Composition = typename Superclass::Composition;
 	using Region = typename Superclass::Region;
 	using AmountType = typename Superclass::AmountType;
@@ -417,8 +420,9 @@ private:
 	computeReducedConnectivity(const Connectivity& connectivity);
 
 	KOKKOS_INLINE_FUNCTION
-	std::vector<double>
-	computeRateVector(IndexType gridIndex);
+	void
+	computeRateVector(
+		RateConstantView toReturn, IndexType id, IndexType gridIndex);
 
 	KOKKOS_INLINE_FUNCTION
 	void
@@ -544,6 +548,7 @@ public:
 	using ConnectivitiesPairView = typename Superclass::ConnectivitiesPairView;
 	using BelongingView = typename Superclass::BelongingView;
 	using OwnedSubMapView = typename Superclass::OwnedSubMapView;
+	using RateConstantView = typename Superclass::RateConstantView;
 	using AmountType = typename Superclass::AmountType;
 	using ReactionDataRef = typename Superclass::ReactionDataRef;
 	using ClusterData = typename Superclass::ClusterData;
@@ -593,8 +598,9 @@ private:
 	computeReducedConnectivity(const Connectivity& connectivity);
 
 	KOKKOS_INLINE_FUNCTION
-	std::vector<double>
-	computeRateVector(IndexType gridIndex);
+	void
+	computeRateVector(
+		RateConstantView toReturn, IndexType id, IndexType gridIndex);
 
 	KOKKOS_INLINE_FUNCTION
 	void

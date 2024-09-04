@@ -260,30 +260,30 @@ PetscMonitor::startStop(TS ts, PetscInt timestep, PetscReal time, Vec solution)
 			timestep, time, previousTime, currentTimeStep);
 
 		// Production reactions
-		auto rateVector = network.getAllProdRates();
-		auto size = rateVector.size();
+		auto rateView = network.getAllProdRates();
+		auto size = rateView.extent(0);
 
 		// Make it an array
 		double rateArray[size][4];
 		for (auto i = 0; i < size; i++) {
-			rateArray[i][0] = rateVector[i][0];
-			rateArray[i][1] = rateVector[i][1];
-			rateArray[i][2] = rateVector[i][2];
-			rateArray[i][3] = rateVector[i][3];
+			rateArray[i][0] = rateView(i, 0);
+			rateArray[i][1] = rateView(i, 1);
+			rateArray[i][2] = rateView(i, 2);
+			rateArray[i][3] = rateView(i, 3);
 		}
 
 		tsGroup->writeReactionDataset(size, rateArray, true, 0);
 
 		// Dissociation reactions
-		rateVector = network.getAllDissoRates();
-		size = rateVector.size();
+		rateView = network.getAllDissoRates();
+		size = rateView.extent(0);
 
 		// Make it an array
 		for (auto i = 0; i < size; i++) {
-			rateArray[i][0] = rateVector[i][0];
-			rateArray[i][1] = rateVector[i][1];
-			rateArray[i][2] = rateVector[i][2];
-			rateArray[i][3] = rateVector[i][3];
+			rateArray[i][0] = rateView(i, 0);
+			rateArray[i][1] = rateView(i, 1);
+			rateArray[i][2] = rateView(i, 2);
+			rateArray[i][3] = rateView(i, 3);
 		}
 
 		tsGroup->writeReactionDataset(size, rateArray, true, 1);

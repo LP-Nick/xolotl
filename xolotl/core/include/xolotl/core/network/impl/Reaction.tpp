@@ -682,13 +682,14 @@ ProductionReaction<TNetwork, TDerived>::computeReducedConnectivity(
 
 template <typename TNetwork, typename TDerived>
 KOKKOS_INLINE_FUNCTION
-std::vector<double>
-ProductionReaction<TNetwork, TDerived>::computeRateVector(IndexType gridIndex)
+void
+ProductionReaction<TNetwork, TDerived>::computeRateVector(
+	RateConstantView toReturn, IndexType id, IndexType gridIndex)
 {
-	std::vector<double> toReturn = {_reactants[0], _reactants[1], _products[0],
-		this->_coefs(0, 0, 0, 0) * this->_rate(gridIndex)};
-
-	return toReturn;
+	toReturn(id, 0) = _reactants[0];
+	toReturn(id, 1) = _reactants[1];
+	toReturn(id, 2) = _products[0];
+	toReturn(id, 3) = this->_coefs(0, 0, 0, 0) * this->_rate(gridIndex);
 }
 
 template <typename TNetwork, typename TDerived>
@@ -2557,13 +2558,14 @@ DissociationReaction<TNetwork, TDerived>::computeReducedConnectivity(
 
 template <typename TNetwork, typename TDerived>
 KOKKOS_INLINE_FUNCTION
-std::vector<double>
-DissociationReaction<TNetwork, TDerived>::computeRateVector(IndexType gridIndex)
+void
+DissociationReaction<TNetwork, TDerived>::computeRateVector(
+	RateConstantView toReturn, IndexType id, IndexType gridIndex)
 {
-	std::vector<double> toReturn = {_reactant, _products[0], _products[1],
-		this->_coefs(0, 0, 0, 0) * this->_rate(gridIndex)};
-
-	return toReturn;
+	toReturn(id, 0) = _reactant;
+	toReturn(id, 1) = _products[0];
+	toReturn(id, 2) = _products[1];
+	toReturn(id, 3) = this->_coefs(0, 0, 0, 0) * this->_rate(gridIndex);
 }
 
 template <typename TNetwork, typename TDerived>
