@@ -334,7 +334,7 @@ ZrReactionNetwork::getRxnDataHeaderString() const
 void
 ZrReactionNetwork::addRxnDataValues(Kokkos::View<const double*> conc,
 	std::vector<std::vector<double>>& totalVals)
-{
+{/*
 	auto data = this->_clusterData.h_view();
 	std::vector<IndexType> vacMobile, vacImmobile, vacAloop, intMobile,
 		intImmobile, intAloop, basalImmobile, cLoop;
@@ -344,8 +344,8 @@ ZrReactionNetwork::addRxnDataValues(Kokkos::View<const double*> conc,
 	std::vector<int> sizeThresholds{3, 6, 9,
 		data.transitionSize()}; // upper size thresholds for mobile int, mobile
 								// vac, immobile vac and int, FBP
-	/*Kokkos::parallel_for(
-	this->_numClusters, KOKKOS_LAMBDA(const IndexType i) {*/
+	//Kokkos::parallel_for(
+	//this->_numClusters, KOKKOS_LAMBDA(const IndexType i) {
 
 	for (auto i = 0; i < _numClusters; i++) {
 		// get relevan data for every cluster including size, conc, and species
@@ -478,7 +478,7 @@ ZrReactionNetwork::addRxnDataValues(Kokkos::View<const double*> conc,
 								 // species j
 		}
 	}
-}
+*/}
 
 void
 ZrReactionNetwork::writeRxnDataLine(
@@ -502,7 +502,7 @@ ZrReactionNetwork::writeRxnDataLine(
 				globalData[id(5)] /= globalData[id(3)];
 			}
 		}
-	*/
+	
 	// Set the output precision
 	const int outputPrecision = 8;
 
@@ -514,7 +514,7 @@ ZrReactionNetwork::writeRxnDataLine(
 
 	// Output the data
 	outputFile << "# time: " << time << std::endl;
-	/*for (auto i = 0; i < _numClusters; i++) {
+	for (auto i = 0; i < _numClusters; i++) {
 		unsigned long int vSize = (localData[8*i+0]);
 		unsigned long int bSize = (localData[8*i+1]);
 		unsigned long int iSize = (localData[8*i+2]);

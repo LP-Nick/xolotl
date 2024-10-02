@@ -329,8 +329,8 @@ public:
 	void
 	writeRxnOutputHeader() const override
 	{
-		std::ofstream(this->getRxnOutputFileName())
-			<< this->getRxnDataHeaderString() << std::endl;
+		//std::ofstream(this->getRxnOutputFileName())
+			//<< this->getRxnDataHeaderString() << std::endl;
 	}
 
 	void
