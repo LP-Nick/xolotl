@@ -288,52 +288,117 @@ PetscMonitor::startStop(TS ts, PetscInt timestep, PetscReal time, Vec solution)
 
 		tsGroup->writeReactionDataset(size, rateArray, true, 1);
 	}
+	
+	//if interval is given with -start_stop option
+	if (h5TimesFile == "holder"){
+		// Don't do anything if it is not on the stride
+		if (((PetscInt)((time + dt / 10.0) / _hdf5Stride) <= _hdf5Previous) &&
+			(time > 0.0)) {
+			PetscFunctionReturn(0);
+		}
 
-	// Don't do anything if it is not on the stride
-	if (((PetscInt)((time + dt / 10.0) / _hdf5Stride) <= _hdf5Previous) &&
-		(time > 0.0)) {
+		// Update the previous time
+		if ((PetscInt)((time + dt / 10.0) / _hdf5Stride) > _hdf5Previous) {
+			_hdf5Previous++;
+		}
+
+		// Gets MPI comm
+		auto xolotlComm = util::getMPIComm();
+
+		// Open the existing HDF5 file
+		io::XFile checkpointFile(
+			_hdf5OutputName, xolotlComm, io::XFile::AccessMode::OpenReadWrite);
+
+		// Get the current time step
+		double currentTimeStep;
+		PetscCall(TSGetTimeStep(ts, &currentTimeStep));
+
+		// Add a concentration time step group for the current time step.
+		auto concGroup = checkpointFile.getGroup<io::XFile::ConcentrationGroup>();
+		assert(concGroup);
+		auto tsGroup = concGroup->addTimestepGroup(
+			_ctrlStep, _loopNumber, timestep, time, previousTime, currentTimeStep);
+
+		// Save the fluence
+		auto fluxHandler = _solverHandler->getFluxHandler();
+		auto fluence = fluxHandler->getFluence();
+		tsGroup->writeFluence(fluence);
+
+		// Get the names of the species in the network
+		auto& network = _solverHandler->getNetwork();
+		auto numSpecies = network.getSpeciesListSize();
+		std::vector<std::string> speciesNames;
+		for (auto id = core::network::SpeciesId(numSpecies); id; ++id) {
+			speciesNames.push_back(network.getSpeciesName(id));
+		}
+
+		this->startStopImpl(ts, timestep, time, solution, checkpointFile,
+			tsGroup.get(), speciesNames);
+
 		PetscFunctionReturn(0);
 	}
+	
+	//if file of times for hdf5 write is give with -start_stop option
+	else{
+		double objTime;
+		std::cout<<"starting time check"<<std::endl;
+		(h5Times.size() == 0) ? (objTime = 1e20) : (objTime = h5Times[0]); //get objective time for writing to hdf5 file
+		std::cout<<"objTime is: "<<objTime<<std::endl;
+		double objDiff = objTime - time;
+		std::cout<<"objDiff is: "<<objDiff<<std::endl;
+		if (objDiff > 0)
+			PetscFunctionReturn(0);
+		
+		// Update the previous time
+		if ((PetscInt)((time + dt / 10.0) / _hdf5Stride) > _hdf5Previous) {
+			_hdf5Previous++;
+		}
 
-	// Update the previous time
-	if ((PetscInt)((time + dt / 10.0) / _hdf5Stride) > _hdf5Previous) {
-		_hdf5Previous++;
+		// Gets MPI comm
+		auto xolotlComm = util::getMPIComm();
+
+		// Open the existing HDF5 file
+		io::XFile checkpointFile(
+			_hdf5OutputName, xolotlComm, io::XFile::AccessMode::OpenReadWrite);
+
+		// Get the current time step
+		double currentTimeStep;
+		PetscCall(TSGetTimeStep(ts, &currentTimeStep));
+
+		// Add a concentration time step group for the current time step.
+		auto concGroup = checkpointFile.getGroup<io::XFile::ConcentrationGroup>();
+		assert(concGroup);
+		auto tsGroup = concGroup->addTimestepGroup(
+			_ctrlStep, _loopNumber, timestep, time, previousTime, currentTimeStep);
+
+		// Save the fluence
+		auto fluxHandler = _solverHandler->getFluxHandler();
+		auto fluence = fluxHandler->getFluence();
+		tsGroup->writeFluence(fluence);
+
+		// Get the names of the species in the network
+		auto& network = _solverHandler->getNetwork();
+		auto numSpecies = network.getSpeciesListSize();
+		std::vector<std::string> speciesNames;
+		for (auto id = core::network::SpeciesId(numSpecies); id; ++id) {
+			speciesNames.push_back(network.getSpeciesName(id));
+		}
+
+		this->startStopImpl(ts, timestep, time, solution, checkpointFile,
+			tsGroup.get(), speciesNames);
+
+		h5Times.erase(h5Times.begin()); //remove time from list
+		std::cout<<"next objTime is: "<<h5Times[0]<<std::endl;
+		//check if next time is also less than current time
+		(h5Times.size() == 0) ? (objTime = 1e20) : (objTime = h5Times[0]); 
+		while (objTime - time < 0){
+			h5Times.erase(h5Times.begin());
+			(h5Times.size() == 0) ? (objTime = 1e20) : (objTime = h5Times[0]); 
+		}
+			
+		
+		PetscFunctionReturn(0);
 	}
-
-	// Gets MPI comm
-	auto xolotlComm = util::getMPIComm();
-
-	// Open the existing HDF5 file
-	io::XFile checkpointFile(
-		_hdf5OutputName, xolotlComm, io::XFile::AccessMode::OpenReadWrite);
-
-	// Get the current time step
-	double currentTimeStep;
-	PetscCall(TSGetTimeStep(ts, &currentTimeStep));
-
-	// Add a concentration time step group for the current time step.
-	auto concGroup = checkpointFile.getGroup<io::XFile::ConcentrationGroup>();
-	assert(concGroup);
-	auto tsGroup = concGroup->addTimestepGroup(
-		_ctrlStep, _loopNumber, timestep, time, previousTime, currentTimeStep);
-
-	// Save the fluence
-	auto fluxHandler = _solverHandler->getFluxHandler();
-	auto fluence = fluxHandler->getFluence();
-	tsGroup->writeFluence(fluence);
-
-	// Get the names of the species in the network
-	auto& network = _solverHandler->getNetwork();
-	auto numSpecies = network.getSpeciesListSize();
-	std::vector<std::string> speciesNames;
-	for (auto id = core::network::SpeciesId(numSpecies); id; ++id) {
-		speciesNames.push_back(network.getSpeciesName(id));
-	}
-
-	this->startStopImpl(ts, timestep, time, solution, checkpointFile,
-		tsGroup.get(), speciesNames);
-
-	PetscFunctionReturn(0);
 }
 
 PetscErrorCode

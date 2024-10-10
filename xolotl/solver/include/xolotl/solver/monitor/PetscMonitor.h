@@ -111,6 +111,9 @@ protected:
 	PetscReal _hdf5Stride = 0.0;
 	PetscInt _hdf5Previous = 0;
 	std::string _hdf5OutputName = "";
+	std::string h5TimesFile = "holder";
+	char *cstr = h5TimesFile.data();
+	std::vector<double> h5Times; 
 
 	std::size_t _ctrlStep = 0;
 };
