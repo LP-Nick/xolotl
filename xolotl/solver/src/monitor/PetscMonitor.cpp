@@ -264,7 +264,8 @@ PetscMonitor::startStop(TS ts, PetscInt timestep, PetscReal time, Vec solution)
 		auto size = rateView.extent(0);
 
 		// Make it an array
-		double rateArray[size][4];
+		std::vector<double[4]> arraySizer(size);
+		auto rateArray = arraySizer.data(); //must be done this way to sidestep size limitations on arrays
 		for (auto i = 0; i < size; i++) {
 			rateArray[i][0] = rateView(i, 0);
 			rateArray[i][1] = rateView(i, 1);
