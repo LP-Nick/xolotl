@@ -102,7 +102,7 @@ public:
 	void
 	copyClusterDataView();
 
-	ReactionNetwork() = default;
+	ReactionNetwork();
 
 	ReactionNetwork(const Subpaving& subpaving, IndexType gridSize,
 		const options::IOptions& opts);
