@@ -171,11 +171,12 @@ MultiXolotl::MultiXolotl(const std::shared_ptr<ComputeContext>& context,
 	// Get restart files
 	auto restartFiles = readRestartFile(restartFile);
 	if (_restarting && restartFiles.size() != (subOptions.size() + 1)) {
-		auto msgstrm = std::stringstream()
-			<< "MultiXolotl: Number of restart files (" << restartFiles.size()
+		std::stringstream ss; 
+	    	ss << "MultiXolotl: Number of restart files (" << restartFiles.size()
 			<< ") must match number of instances (" << (subOptions.size() + 1)
 			<< ")";
-		XOLOTL_ERROR(std::runtime_error, msgstrm.str());
+		auto msgstrm = ss.str();
+		XOLOTL_ERROR(std::runtime_error, msgstrm);
 	}
 	if (_restarting) {
 		primaryOpts->setRestartFilePath(restartFiles[0]);
