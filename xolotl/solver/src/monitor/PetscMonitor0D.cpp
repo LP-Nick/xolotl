@@ -246,13 +246,41 @@ PetscMonitor0D::setup(int loop)
 
 	// Set the monitor to save the status of the simulation in hdf5 file
 	if (flagStatus) {
-		// Find the stride to know how often the HDF5 file has to be written
+		//Case where list of times is provided to save cluster data
 		PetscBool flag;
-		PetscCallVoid(PetscOptionsGetReal(
-			NULL, NULL, "-start_stop", &_hdf5Stride, &flag));
-		if (!flag)
-			_hdf5Stride = 1.0;
+		//Look for file containing list of times to write data to HDF5 file
+		if (h5TimesFile == "holder"){
+			PetscCallVoid(PetscOptionsGetString(NULL, NULL, "-start_stop", cstr, sizeof(cstr), &flag));
+			h5TimesFile = cstr;
+			auto n = h5TimesFile.find(".dat");
+			if ((flag) && (std::string::npos !=n)){
+				std::cout<<"In h5times option for startstop in PetscMonitor0d.cpp"<<std::endl;
+				//Open file h5Times.dat containing list of times to write data
+				std::ifstream inputFile(h5TimesFile.c_str());
+				std::string line;
 
+				//Read file and store values in a vector
+				while (getline(inputFile, line)){
+					if (!line.length() || line[0] == '#')
+						continue;
+					double saveTime = 0.0;
+					sscanf(line.c_str(), "%1f", &saveTime);
+					h5Times.push_back(saveTime);
+				}
+				_hdf5Stride = 1.0;
+			}
+			else {
+				h5TimesFile = "holder";
+				// Find the stride to know how often the HDF5 file has to be written
+				std::cout<<"In else option for startstop in PetscMonitor0d.cpp"<<std::endl;
+				PetscCallVoid(PetscOptionsGetReal(NULL, NULL, "-start_stop", &_hdf5Stride, &flag));
+				if (!flag){
+					_hdf5Stride = 1.0;
+				}
+				std::cout<<"hdf5stride: "<<_hdf5Stride<<std::endl;
+				std::cout<<"h5times stored string: "<<h5TimesFile<<std::endl;
+			}
+		}
 		// Compute the correct _hdf5Previous for a restart
 		// Get the last time step written in the HDF5 file
 		if (hasConcentrations) {

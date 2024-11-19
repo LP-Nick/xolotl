@@ -86,8 +86,8 @@ public:
 	{
 		// Set the fraction of large vacancy clusters (n > 19) that become
 		// faulted basal pyramids:
-		if (maxSizeB > 18)
-			Qb = options.getBasalPortion(); // Basal
+		//if (maxSizeB > 18)
+		Qb = options.getBasalPortion(); // Basal
 	}
 
 	/**

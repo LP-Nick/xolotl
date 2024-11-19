@@ -39,12 +39,12 @@ TimeStepper::step()
 	_currentTime = newTime;
 
 	// TODO: should we add an option to require the end to be exact?
-	//  if (_currentTime == _endTime) {
+	//if (_currentTime == _endTime) {
 	//  	_currentTime = newTime;
-	//  }
-	//  else {
+	//}
+	//else {
 	//  	_currentTime = std::min(newTime, _endTime);
-	//  }
+	//}
 }
 
 [[nodiscard]] bool

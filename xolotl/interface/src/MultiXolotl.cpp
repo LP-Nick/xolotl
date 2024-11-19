@@ -390,6 +390,10 @@ MultiXolotl::solveStep()
 		sub->setTimes(currentTime(), currentDt());
 		// Provide our current step as the external control step
 		sub->setExternalControlStep(currentStep());
+		
+		std::cout<<"current time: "<<currentTime()<<std::endl;
+		std::cout<<"current Dt: "<<currentDt()<<std::endl;
+		std::cout<<"current step: "<<currentStep()<<std::endl;
 		// Run the solver
 		sub->solveXolotl();
 	}
