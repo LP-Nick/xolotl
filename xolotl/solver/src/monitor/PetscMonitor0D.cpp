@@ -264,8 +264,13 @@ PetscMonitor0D::setup(int loop)
 					if (!line.length() || line[0] == '#')
 						continue;
 					double saveTime = 0.0;
-					sscanf(line.c_str(), "%1f", &saveTime);
+					//sscanf(line.c_str(), "%1f", &saveTime);
+					auto tokens = util::Tokenizer<double>{line}();
+					saveTime = tokens[0];
+					std::cout<< "looking at times saved from h5Times.dat"<<std::endl;
 					h5Times.push_back(saveTime);
+					std::cout<< "line from file: "<<line.c_str()<<std::endl;
+					std::cout<< "save Time: "<<saveTime<<std::endl;
 				}
 				_hdf5Stride = 1.0;
 			}

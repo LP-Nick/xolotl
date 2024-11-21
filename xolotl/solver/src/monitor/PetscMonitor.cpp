@@ -282,8 +282,10 @@ PetscMonitor::startStop(TS ts, PetscInt timestep, PetscReal time, Vec solution)
 	
 	//if file of times for hdf5 write is gien with -start_stop option
 	else{
+		std::cout<< "checking h5time for hdf5 write"<<std::endl;
 		double objTime;
 		(h5Times.size() == 0) ? (objTime = 1e20) : (objTime = h5Times[0]); //get objective time for writing to hdf5 file
+		std::cout<< "objTime: "<<objTime<<std::endl;
 		double objDiff = objTime - time;
 		if (objDiff > 0)
 			PetscFunctionReturn(0);
@@ -325,7 +327,16 @@ PetscMonitor::startStop(TS ts, PetscInt timestep, PetscReal time, Vec solution)
 
 		this->startStopImpl(ts, timestep, time, solution, checkpointFile,
 			tsGroup.get(), speciesNames);
-
+		
+		h5Times.erase(h5Times.begin()); //remove time from list
+		std::cout<< "removed time from list"<<std::endl;
+		//check if next time is also less than current time
+		(h5Times.size() == 0) ? (objTime = 1e20) : (objTime = h5Times[0]); 
+		while (objTime - time < 0){
+			std::cout<< "new objTime also less than current time. erasing time: "<<objTime<<std::endl;
+			h5Times.erase(h5Times.begin());
+			(h5Times.size() == 0) ? (objTime = 1e20) : (objTime = h5Times[0]); 
+		}
 		PetscFunctionReturn(0);
 	}
 }
