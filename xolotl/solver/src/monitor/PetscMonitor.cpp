@@ -230,7 +230,7 @@ PetscMonitor::startStop(TS ts, PetscInt timestep, PetscReal time, Vec solution)
 	double dt = time - previousTime;
 	
 	//if interval is given with -start_stop option
-	if (h5TimesFile == "holder"){
+	if (h5TimesFile == "real"){
 		std::cout<<"In startStop for real valued option"<<std::endl;
 		std::cout<<"hdf5stride: "<<_hdf5Stride<<std::endl;
 		// Don't do anything if it is not on the stride
