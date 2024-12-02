@@ -254,14 +254,13 @@ PetscMonitor0D::setup(int loop)
 	if (flagStatus) {
 		//Case where list of times is provided to save cluster data
 		PetscBool flag;
-		h5TimesFile = "holder";
 		//Look for file containing list of times to write data to HDF5 file
-		if (h5TimesFile == "holder"){
-			//std::cout<<"holder worked first loop"<<std::endl;
-			PetscCallVoid(PetscOptionsGetString(NULL, NULL, "-start_stop", cstr, 20, &flag));
+		if (h5TimesFile == "init"){
+			PetscCallVoid(PetscOptionsGetString(NULL, NULL, "-start_stop", cstr, sizeof(cstr), &flag));
+			h5TimesFile =cstr;
 			auto n = h5TimesFile.find(".dat");
 			if ((flag) && (std::string::npos !=n )) {
-				//std::cout<<"it found .dat and the filename is: "<< h5TimesFile<<std::endl;
+				//std::cout<<"In h5times option for startstop in PetscMonitor0d.cpp"<<std::endl;
 				// Open file h5Times.dat containing list of times to write data
 				std::ifstream inputFile(h5TimesFile.c_str());
 				std::string line;
@@ -271,20 +270,26 @@ PetscMonitor0D::setup(int loop)
 					if (!line.length() || line[0] == '#')
 						continue;
 					double saveTime = 0.0;
-					sscanf(line.c_str(), "%lf", &saveTime);
+					//sscanf(line.c_str(), "%lf", &saveTime);
+					auto tokens = util::Tokenizer<double>{line}();
+					saveTime = tokens[0];
+					//std::cout<< "looking at times saved from h5Times.dat"<<std::endl;
 					h5Times.push_back(saveTime);
+					//std::cout<< "line from file: "<<line.c_str()<<std::endl;
+					//std::cout<< "save Time: "<<saveTime<<std::endl;
 				}
 				_hdf5Stride = 1.0;
 			}
 			else {
+				h5TimesFile = "real";
 				// Find the stride to know how often the HDF5 file has to be written
-				//std::cout<<"start_stop condition does not contain .dat"<<std::endl;
-				PetscCallVoid(PetscOptionsGetReal(
-					NULL, NULL, "-start_stop", &_hdf5Stride, &flag));
+				//std::cout<<"In else option for startstop in PetscMonitor0d.cpp"<<std::endl;
+				PetscCallVoid(PetscOptionsGetReal(NULL, NULL, "-start_stop", &_hdf5Stride, &flag));
 				if (!flag){
-					//std::cout<<"start_stop condition does not have an interval specified either"<<std::endl;
 					_hdf5Stride = 1.0;
 				}
+				//std::cout<<"hdf5stride: "<<_hdf5Stride<<std::endl;
+				//std::cout<<"h5times stored string: "<<h5TimesFile<<std::endl;
 			}
 		}
 		// Compute the correct _hdf5Previous for a restart
