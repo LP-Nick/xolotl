@@ -366,6 +366,11 @@ MultiXolotl::updateTemperaturesAndRates(
 void
 MultiXolotl::solveStep()
 {
+	//Skip the first timestep because it doesn't do anything
+	
+	if(currentTime() == 0.0)
+		return;
+
 	// Transfer the temperature to the full network
 	auto subInstanceData = getSubInstanceData();
 	// 0D
