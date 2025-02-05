@@ -390,6 +390,8 @@ MultiXolotl::solveStep()
 		std::max((int)subInstanceData.temperatures.size() - 2, 1));
 
 	// Solve
+	std::cout << "Current Time: " << currentTime() << std::endl;
+	std::cout << "Current Dt: " << currentDt() << std::endl;
 	for (auto&& sub : _subInstances) {
 		// Set the time we want to reach
 		sub->setTimes(currentTime(), currentDt());

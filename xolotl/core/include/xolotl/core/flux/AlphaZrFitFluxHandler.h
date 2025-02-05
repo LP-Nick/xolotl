@@ -110,6 +110,8 @@ public:
 		using NetworkType = network::ZrReactionNetwork;
 		auto zrNetwork = dynamic_cast<NetworkType*>(&network);
 
+		double fluxFactor = fluxAmplitude / (8.93e-8) ; //scale the flux to the default dose rate of 8.93e-8 dpa/s (this value should be input as flux in param file for standard cases)
+
 		// Set the flux index corresponding the mobile interstitial clusters (n
 		// < 10)
 		NetworkType::Composition comp = NetworkType::Composition::zero();
@@ -123,7 +125,7 @@ public:
 				continue;
 			}
 			fluxIndices.push_back(cluster.getId());
-			incidentFluxVec.push_back(std::vector<double>(1, fluxI[i - 1]));
+			incidentFluxVec.push_back(std::vector<double>(1, fluxFactor*fluxI[i - 1]));
 		}
 
 		// Set the flux index corresponding the mobile vacancy clusters (n < 10)
@@ -137,9 +139,9 @@ public:
 			fluxIndices.push_back(cluster.getId());
 			if (i > 18)
 				incidentFluxVec.push_back(
-					std::vector<double>(1, fluxV[i - 1] * (1 - Qb)));
+					std::vector<double>(1, fluxFactor*fluxV[i - 1] * (1 - Qb)));
 			else
-				incidentFluxVec.push_back(std::vector<double>(1, fluxV[i - 1]));
+				incidentFluxVec.push_back(std::vector<double>(1, fluxFactor*fluxV[i - 1]));
 		}
 
 		// Set the flux index corresponding to Basal
@@ -153,7 +155,7 @@ public:
 			fluxIndices.push_back(cluster.getId());
 			if (i > 18)
 				incidentFluxVec.push_back(
-					std::vector<double>(1, fluxV[i - 1] * (Qb)));
+					std::vector<double>(1, fluxFactor*fluxV[i - 1] * (Qb)));
 			else
 				incidentFluxVec.push_back(std::vector<double>(1, 0.0));
 		}

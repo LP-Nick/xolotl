@@ -43,7 +43,7 @@ TimeStepper::step()
 	//  	_currentTime = newTime;
 	//  }
 	//  else {
-	//  	_currentTime = std::min(newTime, _endTime);
+	_currentTime = std::min(newTime, _endTime);
 	//  }
 }
 
