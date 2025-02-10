@@ -291,7 +291,7 @@ PetscSolver::initialize(int loop, double time, DM oldDA, Vec oldC)
 }
 
 void
-PetscSolver::setTimes(double finalTime, double dt)
+PetscSolver::setTimes(double finalTime, double dt, double resetDt)
 {
 	// Get the default values for the dt
 	TSAdapt adapt;
@@ -303,6 +303,9 @@ PetscSolver::setTimes(double finalTime, double dt)
 
 	// Give the final time value to the solver
 	PetscCallVoid(TSSetMaxTime(ts, finalTime));
+	
+	// Reset the initial dt (necessary with matchstep option)
+	PetscCallVoid(TSSetTimeStep(ts, resetDt));
 }
 
 std::vector<std::vector<std::vector<std::vector<std::pair<IdType, double>>>>>

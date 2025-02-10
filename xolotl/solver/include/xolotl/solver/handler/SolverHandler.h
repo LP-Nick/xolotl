@@ -177,6 +177,9 @@ protected:
 
 	//! The previous time.
 	double previousTime;
+	
+	//! The largest timestep used between coupling timesteps
+	double largestDt;
 
 	//! The number of xenon atoms that went to the GB
 	double nXeGB;
@@ -479,7 +482,25 @@ public:
 		if (updateFluence)
 			fluxHandler->computeFluence(time);
 	}
+	
+	/**
+	 * \see ISolverHandler.h
+	 */
+	double
+	getLargestDt() override
+	{
+		return largestDt;
+	}
 
+	/**
+	 * \see ISolverHandler.h
+	 */
+	void
+	setLargestDt(double dt) override
+	{
+		largestDt = dt;		
+	}
+	
 	/**
 	 * \see ISolverHandler.h
 	 */

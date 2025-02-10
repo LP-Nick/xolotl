@@ -390,11 +390,16 @@ MultiXolotl::solveStep()
 		std::max((int)subInstanceData.temperatures.size() - 2, 1));
 
 	// Solve
+	//const options::IOptions& options;
+	auto initDt = _options->getInitialTimeStep();
 	std::cout << "Current Time: " << currentTime() << std::endl;
 	std::cout << "Current Dt: " << currentDt() << std::endl;
 	for (auto&& sub : _subInstances) {
 		// Set the time we want to reach
-		sub->setTimes(currentTime(), currentDt());
+		std::cout << "dt to initialize with: " << std::max(sub->getLargestDt(),initDt) << std::endl;
+		auto subInitDt = std::max(sub->getLargestDt(),initDt);
+		//sub->setTimes(currentTime(), currentDt());
+		sub->setTimes(currentTime(), currentDt(), subInitDt);
 		// Provide our current step as the external control step
 		sub->setExternalControlStep(currentStep());
 		// Run the solver

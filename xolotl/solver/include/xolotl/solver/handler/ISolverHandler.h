@@ -139,6 +139,22 @@ public:
 	 */
 	virtual void
 	setPreviousTime(double time, bool updateFluence = false) = 0;
+	
+	/**
+	 * Get the largest dt
+	 *
+	 * @return The largest dt
+	 */
+	virtual double
+	getLargestDt() = 0;
+
+	/**
+	 * Set the largest dt.
+	 *
+	 * @param dt The current dt as calculated from time - previousTime
+	 */
+	virtual void
+	setLargestDt(double dt) = 0;
 
 	/**
 	 * Get the number of Xe that went to the GB.

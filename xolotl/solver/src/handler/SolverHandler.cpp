@@ -62,7 +62,8 @@ SolverHandler::SolverHandler(NetworkType& _network,
 	gridParam2(0.0),
 	gridParam3(0.0),
 	gridParam4(0.0),
-	gridParam5(0.0)
+	gridParam5(0.0),
+	largestDt(0.0)
 
 {
 }

@@ -60,6 +60,10 @@ public:
 	PetscErrorCode
 	computeAlphaZrRxn(
 		TS ts, PetscInt timestep, PetscReal time, Vec solution) override;
+		
+	PetscErrorCode
+	monitorDt(
+		TS ts, PetscInt timestep, PetscReal time, Vec solution) override;
 
 	PetscErrorCode
 	monitorBubble(TS ts, PetscInt timestep, PetscReal time, Vec solution);

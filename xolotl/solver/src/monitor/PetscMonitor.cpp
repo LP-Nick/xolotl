@@ -124,6 +124,16 @@ computeAlphaZrRxn(
 }
 
 PetscErrorCode
+monitorDt(
+	TS ts, PetscInt timestep, PetscReal time, Vec solution, void* ictx)
+{
+	PetscFunctionBeginUser;
+	PetscCall(static_cast<IPetscMonitor*>(ictx)->monitorDt(
+		ts, timestep, time, solution));
+	PetscFunctionReturn(0);
+}
+
+PetscErrorCode
 computeAlloy(TS ts, PetscInt timestep, PetscReal time, Vec solution, void* ictx)
 {
 	PetscFunctionBeginUser;
@@ -559,6 +569,13 @@ PetscMonitor::computeAlphaZr(
 
 PetscErrorCode
 PetscMonitor::computeAlphaZrRxn(
+	TS ts, PetscInt timestep, PetscReal time, Vec solution)
+{
+	PetscFunctionReturn(0);
+}
+
+PetscErrorCode
+PetscMonitor::monitorDt(
 	TS ts, PetscInt timestep, PetscReal time, Vec solution)
 {
 	PetscFunctionReturn(0);

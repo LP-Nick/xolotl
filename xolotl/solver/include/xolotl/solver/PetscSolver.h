@@ -98,7 +98,7 @@ public:
 	 * \see ISolver.h
 	 */
 	void
-	setTimes(double finalTime, double dt) override;
+	setTimes(double finalTime, double dt, double resetDt) override;
 
 	/**
 	 * \see ISolver.h

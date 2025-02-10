@@ -173,10 +173,10 @@ XolotlInterface::setNetworkTemperature(
 CATCH
 
 void
-XolotlInterface::setTimes(double finalTime, double dt) TRY
+XolotlInterface::setTimes(double finalTime, double dt, double resetDt) TRY
 {
 	// Set the time in the solver
-	solver->setTimes(finalTime, dt);
+	solver->setTimes(finalTime, dt, resetDt);
 }
 CATCH
 
@@ -277,6 +277,13 @@ double
 XolotlInterface::getCurrentDt() TRY
 {
 	return solver->getCurrentDt();
+}
+CATCH
+
+double
+XolotlInterface::getLargestDt() TRY
+{
+	return solverCast(solver)->getSolverHandler()->getLargestDt();
 }
 CATCH
 

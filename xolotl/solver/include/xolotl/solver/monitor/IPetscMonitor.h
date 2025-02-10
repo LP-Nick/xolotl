@@ -57,6 +57,10 @@ public:
 	virtual PetscErrorCode
 	computeAlphaZrRxn(
 		TS ts, PetscInt timestep, PetscReal time, Vec solution) = 0;
+		
+	virtual PetscErrorCode
+	monitorDt(
+		TS ts, PetscInt timestep, PetscReal time, Vec solution) = 0;
 
 	virtual PetscErrorCode
 	monitorScatter(TS ts, PetscInt timestep, PetscReal time, Vec solution) = 0;

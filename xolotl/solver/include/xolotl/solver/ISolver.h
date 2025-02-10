@@ -51,9 +51,10 @@ public:
 	 *
 	 * @param finalTime The wanted final time.
 	 * @param dt The wanted max time step.
+	 * @param dt The desired initial dt
 	 */
 	virtual void
-	setTimes(double finalTime, double dt) = 0;
+	setTimes(double finalTime, double dt, double resetDt) = 0;
 
 	/**
 	 * Set the current step from an external controller

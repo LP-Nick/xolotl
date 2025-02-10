@@ -41,7 +41,7 @@ PetscMonitor0D::setup(int loop)
 
 	// Flags to launch the monitors or not
 	PetscBool flagCheck, flag1DPlot, flagBubble, flagStatus, flagAlloy,
-		flagXeRetention, flagLargest, flagZr;
+		flagXeRetention, flagLargest, flagZr, flagMonitorDt;
 
 	// Check the option -check_collapse
 	PetscCallVoid(
@@ -68,6 +68,10 @@ PetscMonitor0D::setup(int loop)
 	// Check the option -largest_conc
 	PetscCallVoid(
 		PetscOptionsHasName(NULL, NULL, "-largest_conc", &flagLargest));
+	
+	//Check the option -monitor_dt
+	PetscCallVoid(
+		PetscOptionsHasName(NULL, NULL, "-monitor_dt", &flagMonitorDt));
 
 	// Determine if we have an existing restart file,
 	// and if so, it it has had timesteps written to it.
@@ -249,6 +253,13 @@ PetscMonitor0D::setup(int loop)
 		PetscCallVoid(
 			TSMonitorSet(_ts, monitor::monitorLargest, this, nullptr));
 	}
+	
+	//Set the monitor to track the largest dt for the sub-instance timesteps when using matchstep option
+	if (flagMonitorDt) {
+		//monitorDr will be called at each timestep
+		PetscCallVoid(
+			TSMonitorSet(_ts, monitor::monitorDt, this, nullptr));
+	}
 
 	// Set the monitor to save the status of the simulation in hdf5 file
 	if (flagStatus) {
@@ -407,9 +418,9 @@ PetscMonitor0D::startStopImpl(TS ts, PetscInt timestep, PetscReal time,
 	gridPointSolution = solutionArray[0];
 
 	for (auto l = 0; l < dof + 1; ++l) {
-		if (std::fabs(gridPointSolution[l]) > 1.0e-16) {
+		//if (std::fabs(gridPointSolution[l]) > 1.0e-16) {
 			concs[0].emplace_back(l, gridPointSolution[l]);
-		}
+		//}
 	}
 
 	// Write our concentration data to the current timestep group
@@ -523,7 +534,7 @@ PetscMonitor0D::computeAlphaZr(
 	TS ts, PetscInt timestep, PetscReal time, Vec solution)
 {
 	PetscFunctionBeginUser;
-
+	
 	// Get the da from ts
 	DM da;
 	PetscCall(TSGetDM(ts, &da));
@@ -580,6 +591,20 @@ PetscMonitor0D::computeAlphaZrRxn(
 	// Restore the PETSc solution array
 	PetscCall(DMDAVecRestoreKokkosOffsetViewDOF(da, solution, &concs));
 
+	PetscFunctionReturn(0);
+}
+
+PetscErrorCode
+PetscMonitor0D::monitorDt(
+	TS ts, PetscInt timestep, PetscReal time, Vec solution)
+{
+	double previousTime = _solverHandler->getPreviousTime();
+	double dt = time - previousTime;
+		
+	if(time > 0.0 && dt > _solverHandler->getLargestDt())
+			_solverHandler->setLargestDt(dt);
+	std::cout << "dt saved as largestDt: " << _solverHandler->getLargestDt() << std::endl;
+	
 	PetscFunctionReturn(0);
 }
 

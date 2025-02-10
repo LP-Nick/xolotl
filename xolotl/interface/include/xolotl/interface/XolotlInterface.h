@@ -144,13 +144,14 @@ public:
 		std::vector<double> temperatures, std::vector<double> depths);
 
 	/**
-	 * Set the final time and the dt.
+	 * Set the final time, the dt, and the dt to initialize the subinstance with.
 	 *
 	 * @param finalTime The wanted final time
 	 * @param dt The wanted max time step
+	  *@param dt The desired initial dt
 	 */
 	void
-	setTimes(double finalTime, double dt);
+	setTimes(double finalTime, double dt, double resetDt);
 
 	/**
 	 * Set the external control step
@@ -258,6 +259,14 @@ public:
 	double
 	getCurrentDt();
 
+	/**
+	 * Get the largest dt as monitored by the solverHandler
+	 *
+	 * @return the largest dt
+	 */
+	double
+	getLargestDt();
+	
 	/**
 	 * Set the current time and dt.
 	 *

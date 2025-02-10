@@ -46,6 +46,10 @@ computeAlphaZr(
 extern PetscErrorCode
 computeAlphaZrRxn(
 	TS ts, PetscInt timestep, PetscReal time, Vec solution, void* ictx);
+	
+extern PetscErrorCode
+monitorDt(
+	TS ts, PetscInt timestep, PetscReal time, Vec solution, void* ictx);
 
 extern PetscErrorCode
 computeAlloy(
