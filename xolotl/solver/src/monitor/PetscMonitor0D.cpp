@@ -603,7 +603,7 @@ PetscMonitor0D::monitorDt(
 		
 	if(time > 0.0 && dt > _solverHandler->getLargestDt())
 			_solverHandler->setLargestDt(dt);
-	std::cout << "dt saved as largestDt: " << _solverHandler->getLargestDt() << std::endl;
+	
 	
 	PetscFunctionReturn(0);
 }

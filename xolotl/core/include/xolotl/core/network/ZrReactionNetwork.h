@@ -52,6 +52,14 @@ public:
 	initializeExtraClusterData(const options::IOptions& options);
 
 	void
+	updateExtraClusterData(const std::vector<double>& gridTemps,
+		const std::vector<double>& gridDepths);
+
+	std::vector<double>
+	calcThermalRadii(const std::vector<std::vector<double>>& alphaDVec, 
+		const std::vector<std::vector<double>>& mDVec, const double& temp, const double& size, const int& species);
+
+	void
 	setGridSize(IndexType gridSize) override;
 
 	std::string

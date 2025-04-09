@@ -223,6 +223,182 @@ ZrReactionNetwork::initializeExtraClusterData(const options::IOptions& options)
 		}); // Goes with parallel_for
 }
 
+std::vector<double>
+ZrReactionNetwork::calcThermalRadii(
+	const std::vector<std::vector<double>>& alphaDVec, const std::vector<std::vector<double>>& mDVec, 
+	const double& temp, const double& size, const int& species)
+	{
+	auto alphaDI = 0.0;
+	auto alphaDV = 0.0;
+	auto mDI = 0.0;
+	auto mDV = 0.0;
+	auto Tm = 2128; //melting point of Zr in K
+	int lowerIdx = 0;
+	int upperIdx = 0;
+	std::vector<double> radii(2, 0.0);
+	std::vector<double> sizeLoop(5, 0.0);
+	
+	if(species == 0){
+		// vacancy a-loop case
+		sizeLoop = {11.7, 42.3, 119.4, 269.9, 751.6}; //number of atoms in a vacancy a-loop corresponding to a radius of {6.5,12,20,30,50} Anstroms
+	}
+	else if(species == 1){
+		// interstitial a-loop case
+		sizeLoop = {14.1, 50.5, 142.0, 320.7, 892.6}; //number of atoms in an interstitial a-loop corresponding to a radius of {6.5,12,20,30,50} Anstroms
+	}
+	else{
+		// basal case
+		sizeLoop = {46.5, 160.7, 448.2, 1009.8, 2806.7}; //number of atoms in a basal defect corresponding to a radius of {6.5,12,20,30,50} Anstroms
+	}
+	
+	//case where loop is larger than largest loop simulated (use the largest sizeLoop data)
+	if(size >= sizeLoop[sizeLoop.size()-1]){
+		alphaDI = alphaDVec[species*2][sizeLoop.size()-1];
+		alphaDV = alphaDVec[species*2 + 1][sizeLoop.size()-1];
+		
+		mDI = mDVec[species*2][sizeLoop.size()-1];
+		mDV = mDVec[species*2 + 1][sizeLoop.size()-1];
+	}
+	//find indices for linear interpolation between loop sizes
+	else {
+		for(int i=0;i<sizeLoop.size();i++){
+			if(size<=sizeLoop[i]){
+				upperIdx = i;
+				lowerIdx = i-1;
+			}	
+		}
+		//case where loop is smaller than lowest loop simulated (interpolate between 0 and smallest loop)
+		if(lowerIdx<0){
+			alphaDI = (alphaDVec[species*2][upperIdx] - 0) /
+									(sizeLoop[upperIdx] - 0) * (size - 0) + alphaDVec[species*2][upperIdx];
+			
+			alphaDV = (alphaDVec[species*2+1][upperIdx] - 0) /
+									(sizeLoop[upperIdx] - 0) * (size - 0) + alphaDVec[species*2+1][upperIdx];
+									
+			mDI = (mDVec[species*2][upperIdx] - 0) /
+									(sizeLoop[upperIdx] - 0) * (size - 0) + mDVec[species*2][upperIdx];
+			
+			mDV = (mDVec[species*2+1][upperIdx] - 0) /
+									(sizeLoop[upperIdx] - 0) * (size - 0) + mDVec[species*2+1][upperIdx];
+		}
+		//loop falls in range of sizes tested 
+		else{
+			alphaDI = (alphaDVec[species*2][upperIdx] - alphaDVec[species*2][lowerIdx]) /
+									(sizeLoop[upperIdx] - sizeLoop[lowerIdx]) * (size - sizeLoop[lowerIdx]) + alphaDVec[species*2][upperIdx];
+			
+			alphaDV = (alphaDVec[species*2+1][upperIdx] - alphaDVec[species*2+1][lowerIdx]) /
+									(sizeLoop[upperIdx] - sizeLoop[lowerIdx]) * (size - sizeLoop[lowerIdx]) + alphaDVec[species*2+1][upperIdx];
+									
+			mDI = (mDVec[species*2][upperIdx] - mDVec[species*2][lowerIdx]) /
+									(sizeLoop[upperIdx] - sizeLoop[lowerIdx]) * (size - sizeLoop[lowerIdx]) + mDVec[species*2][upperIdx];
+			
+			mDV = (mDVec[species*2+1][upperIdx] - mDVec[species*2+1][lowerIdx]) /
+									(sizeLoop[upperIdx] - sizeLoop[lowerIdx]) * (size - sizeLoop[lowerIdx]) + mDVec[species*2+1][upperIdx];
+		}
+	}
+	//calculated radii
+	radii[0] = alphaDI*pow(Tm/temp, mDI);
+	radii[1] = alphaDV*pow(Tm/temp, mDV);
+	return (radii);
+	//data.extraData.dislocationCaptureRadius(cl, 0) = radii[0];
+	//data.extraData.dislocationCaptureRadius(cl, 1) = radii[1];
+}
+
+void
+ZrReactionNetwork::updateExtraClusterData(
+	const std::vector<double>& gridTemps, const std::vector<double>& gridDepths)
+{
+	// Thermal radii that vary with temp (testing)
+	
+	//Thermal capture parameters taken from table 4 of https://www.sciencedirect.com/science/article/pii/S0022311523005196
+	std::vector<double> alphaDVI{5.3, 6.5, 6.1, 7.1, 8.9}; //alpha d parameter for vac loop capture of single interstitial
+	std::vector<double> alphaDVV{3.6, 3.5, 5.2, 6.2, 7.8}; //alpha d parameter for vac loop capture of single vacancy
+	std::vector<double> alphaDII{7.5, 9.1, 11.3, 12.3, 12.6}; //alpha d parameter for vac loop capture of single interstitial
+	std::vector<double> alphaDIV{7.0, 7.6, 8.0, 7.2, 8.3}; //alpha d parameter for vac loop capture of single vacancy
+	std::vector<double> alphaDBI{6.9, 7.9, 7.6, 7.4, 8.9}; //alpha d parameter for basal loop capture of single interstitial
+	std::vector<double> alphaDBV{3.0, 3.7, 3.3, 3.7, 5.9}; //alpha d parameter for basal loop capture of single vacancy
+	
+	std::vector<std::vector<double>> alphaD;
+	alphaD = {alphaDVI, alphaDVV, alphaDII, alphaDIV, alphaDBI, alphaDBV}; 
+	
+	std::vector<double> mDVI{0.16, 0.0095, 0.0098, 0.025, 0.0070}; //m d parameter for vac loop capture of single interstitial
+	std::vector<double> mDVV{0.33, 0.47, 0.56, 0.41, 0.51}; //m d parameter for vac loop capture of single vacancy
+	std::vector<double> mDII{0.23, 0.25, 0.29, 0.37, 0.46}; //m d parameter for vac loop capture of single interstitial
+	std::vector<double> mDIV{0.075, 0.032, 0.055, 0.047, 0.032}; //m d parameter for vac loop capture of single vacancy
+	std::vector<double> mDBI{0.29, 0.19, 0.062, 0.058, 0.019}; //m d parameter for vac loop capture of single interstitial
+	std::vector<double> mDBV{0.29, 0.28, 0.59, 0.64, 0.53}; //m d parameter for vac loop capture of single vacancy
+	
+	std::vector<std::vector<double>> mD;
+	mD = {mDVI, mDVV, mDII, mDIV, mDBI, mDBV}; 
+	
+	double temp = 0.0;
+		
+	// Check which temperature index to use
+	IdType tempId = 0;
+	for (tempId = 0; tempId < gridDepths.size(); tempId++) {
+		if (gridDepths[tempId] > 0.01)
+			break;
+	}
+
+	temp = gridTemps[tempId];
+	std::cout << "temperature: " << temp <<std::endl;
+	
+	this->_clusterData.h_view().extraData.initialize(
+		this->_clusterData.h_view().numClusters,
+		this->_clusterData.h_view().gridSize);
+	this->copyClusterDataView();
+
+	auto data = this->_clusterData.h_view();
+	Kokkos::parallel_for(
+		this->_numClusters, KOKKOS_LAMBDA(const IndexType i) {
+			auto cluster = data.getCluster(i);
+			const auto& reg = cluster.getRegion();
+			Composition lo(reg.getOrigin());	
+
+	// Set the dislocation capture radii for vacancy a-loops (convert to
+			// nm): First index in dislocation capture radius is for I capture;
+			// second is for V capture
+			if (lo.isOnAxis(Species::V)) {
+				//Thermal radii:
+				double size = lo[Species::V];
+				auto radii = calcThermalRadii(alphaD, mD, temp, size, 0);
+				data.extraData.dislocationCaptureRadius(i, 0) = radii[0];
+				data.extraData.dislocationCaptureRadius(i, 1) = radii[1];
+			}
+			
+
+			// adding basal
+			// Set the dislocation capture radii for vacancy c-loops (convert to
+			// nm): First index in dislocation capture radius is for I capture;
+			// second is for V capture
+			else if (lo.isOnAxis(Species::Basal)) {
+				// Thermal radii:
+				if (lo[Species::Basal] < data.transitionSize())
+					data.extraData.dislocationCaptureRadius(i, 0) = 1.1;
+				
+				else{
+					double size = lo[Species::Basal];
+					auto radii = calcThermalRadii(alphaD, mD, temp, size, 2);
+					data.extraData.dislocationCaptureRadius(i, 0) = radii[0];
+					data.extraData.dislocationCaptureRadius(i, 1) = radii[1];
+				}
+			}
+
+			// Set the dislocation capture radii for interstitial a-loops
+			// (convert to nm)
+			else if (lo.isOnAxis(Species::I)) {
+				// Thermal radii
+				double size = lo[Species::I];
+				auto radii = calcThermalRadii(alphaD, mD, temp, size, 1);
+				data.extraData.dislocationCaptureRadius(i, 0) = radii[0];
+				data.extraData.dislocationCaptureRadius(i, 1) = radii[1];
+				}
+		
+		}); // Goes with parallel_for
+
+}
+
+
 std::string
 ZrReactionNetwork::getMonitorDataHeaderString() const
 {
