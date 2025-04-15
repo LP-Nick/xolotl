@@ -120,6 +120,11 @@ ZrProductionReaction::getRateForProduction(IndexType gridIndex)
 	auto cl0 = this->_clusterData->getCluster(_reactants[0]);
 	auto cl1 = this->_clusterData->getCluster(_reactants[1]);
 
+	auto cl0Reg = cl0.getRegion();
+	auto cl1Reg = cl1.getRegion();
+	Composition lo0 = cl0Reg.getOrigin();
+	Composition lo1 = cl1Reg.getOrigin();
+
 	double r0 = cl0.getReactionRadius();
 	double r1 = cl1.getReactionRadius();
 
@@ -146,7 +151,62 @@ ZrProductionReaction::getRateForProduction(IndexType gridIndex)
 		_reactants[1], 0);
 	rdCl[1][1] = this->_clusterData->extraData.dislocationCaptureRadius(
 		_reactants[1], 1);
+	
+	/*
+	//std::cout<<"reaction between ";
+	//print capture radii cluster 0
+	if(lo0.isOnAxis(Species::Basal)){
+				 auto size = lo0[Species::Basal];
+				 std::cout << "basal capture radii for size " << size <<std::endl;
+				 std::cout << "int capture: " << rdCl[0][0] <<std::endl;
+				 std::cout << "vac capture: " << rdCl[0][1] <<std::endl;
+				 //std::cout<<"basal "<<size<<" and";
+	}
+	else if(lo0.isOnAxis(Species::V)){
+				 auto size = lo0[Species::V];
+				 std::cout << "vacancy capture radii for size " << size <<std::endl;
+				 std::cout << "int capture: " << rdCl[0][0] <<std::endl;
+				 std::cout << "vac capture: " << rdCl[0][1] <<std::endl;
+				 //std::cout<<"vac "<<size<<" and";
+	}
+	else if(lo0.isOnAxis(Species::I)){
+				 auto size = lo0[Species::I];
+				 std::cout << "interstitial capture radii for size " << size <<std::endl;
+				 std::cout << "int capture: " << rdCl[0][0] <<std::endl;
+				 std::cout << "vac capture: " << rdCl[0][1] <<std::endl;
+				 //std::cout<<"int "<<size<<" and ";
+	}
+	//print capture radii cluster 1
+	if(lo1.isOnAxis(Species::Basal)){
+				 auto size = lo1[Species::Basal];
+				 std::cout << "basal capture radii for size " << size <<std::endl;
+				 std::cout << "int capture: " << rdCl[1][0] <<std::endl;
+				 std::cout << "vac capture: " << rdCl[1][1] <<std::endl;
+				 //std::cout<<"basal "<<size<<std::endl;
+	}
+	else if(lo1.isOnAxis(Species::V)){
+				 auto size = lo1[Species::V];
+				 std::cout << "vacancy capture radii for size " << size <<std::endl;
+				 std::cout << "int capture: " << rdCl[1][0] <<std::endl;
+				 std::cout << "vac capture: " << rdCl[1][1] <<std::endl;
+				 //std::cout<<"vac "<<size<<std::endl;
+	}
+	else if(lo1.isOnAxis(Species::I)){
+				 auto size = lo1[Species::I];
+				 std::cout << "interstitial capture radii for size " << size <<std::endl;
+				 std::cout << "int capture: " << rdCl[1][0] <<std::endl;
+				 std::cout << "vac capture: " << rdCl[1][1] <<std::endl;
+				 //std::cout<<"int "<<size<<std::endl;
+	}
+	/*std::cout<<"r0: "<<r0<<std::endl;
+	std::cout<<"r1: "<<r1<<std::endl;
+	std::cout<<"dc0: "<<dc0<<std::endl;
+	std::cout<<"dc1: "<<dc1<<std::endl;
+	std::cout<<"rate: "<<zr::getRate(cl0.getRegion(), cl1.getRegion(), r0, r1, dc0, dc1, rdCl,
+				 p, this->_clusterData->transitionSize()) <<std::endl;*/
+       
 
+	
 	return zr::getRate(cl0.getRegion(), cl1.getRegion(), r0, r1, dc0, dc1, rdCl,
 		p, this->_clusterData->transitionSize());
 }

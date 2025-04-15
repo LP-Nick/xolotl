@@ -265,40 +265,41 @@ ZrReactionNetwork::calcThermalRadii(
 			if(size<=sizeLoop[i]){
 				upperIdx = i;
 				lowerIdx = i-1;
+				break;
 			}	
 		}
 		//case where loop is smaller than lowest loop simulated (interpolate between 0 and smallest loop)
 		if(lowerIdx<0){
 			alphaDI = (alphaDVec[species*2][upperIdx] - 0) /
-									(sizeLoop[upperIdx] - 0) * (size - 0) + alphaDVec[species*2][upperIdx];
+									(sizeLoop[upperIdx] - 0) * (size - 0) + 0;
 			
 			alphaDV = (alphaDVec[species*2+1][upperIdx] - 0) /
-									(sizeLoop[upperIdx] - 0) * (size - 0) + alphaDVec[species*2+1][upperIdx];
+									(sizeLoop[upperIdx] - 0) * (size - 0) + 0;
 									
 			mDI = (mDVec[species*2][upperIdx] - 0) /
-									(sizeLoop[upperIdx] - 0) * (size - 0) + mDVec[species*2][upperIdx];
+									(sizeLoop[upperIdx] - 0) * (size - 0) + 0;
 			
 			mDV = (mDVec[species*2+1][upperIdx] - 0) /
-									(sizeLoop[upperIdx] - 0) * (size - 0) + mDVec[species*2+1][upperIdx];
+									(sizeLoop[upperIdx] - 0) * (size - 0) + 0;
 		}
 		//loop falls in range of sizes tested 
 		else{
 			alphaDI = (alphaDVec[species*2][upperIdx] - alphaDVec[species*2][lowerIdx]) /
-									(sizeLoop[upperIdx] - sizeLoop[lowerIdx]) * (size - sizeLoop[lowerIdx]) + alphaDVec[species*2][upperIdx];
+									(sizeLoop[upperIdx] - sizeLoop[lowerIdx]) * (size - sizeLoop[lowerIdx]) + alphaDVec[species*2][lowerIdx];
 			
 			alphaDV = (alphaDVec[species*2+1][upperIdx] - alphaDVec[species*2+1][lowerIdx]) /
-									(sizeLoop[upperIdx] - sizeLoop[lowerIdx]) * (size - sizeLoop[lowerIdx]) + alphaDVec[species*2+1][upperIdx];
+									(sizeLoop[upperIdx] - sizeLoop[lowerIdx]) * (size - sizeLoop[lowerIdx]) + alphaDVec[species*2+1][lowerIdx];
 									
 			mDI = (mDVec[species*2][upperIdx] - mDVec[species*2][lowerIdx]) /
-									(sizeLoop[upperIdx] - sizeLoop[lowerIdx]) * (size - sizeLoop[lowerIdx]) + mDVec[species*2][upperIdx];
+									(sizeLoop[upperIdx] - sizeLoop[lowerIdx]) * (size - sizeLoop[lowerIdx]) + mDVec[species*2][lowerIdx];
 			
 			mDV = (mDVec[species*2+1][upperIdx] - mDVec[species*2+1][lowerIdx]) /
-									(sizeLoop[upperIdx] - sizeLoop[lowerIdx]) * (size - sizeLoop[lowerIdx]) + mDVec[species*2+1][upperIdx];
+									(sizeLoop[upperIdx] - sizeLoop[lowerIdx]) * (size - sizeLoop[lowerIdx]) + mDVec[species*2+1][lowerIdx];
 		}
 	}
 	//calculated radii
-	radii[0] = alphaDI*pow(Tm/temp, mDI);
-	radii[1] = alphaDV*pow(Tm/temp, mDV);
+	radii[0] = alphaDI*pow(Tm/temp, mDI)/10; //convert from Angstrom to nm
+	radii[1] = alphaDV*pow(Tm/temp, mDV)/10;
 	return (radii);
 	//data.extraData.dislocationCaptureRadius(cl, 0) = radii[0];
 	//data.extraData.dislocationCaptureRadius(cl, 1) = radii[1];
@@ -364,6 +365,9 @@ ZrReactionNetwork::updateExtraClusterData(
 				auto radii = calcThermalRadii(alphaD, mD, temp, size, 0);
 				data.extraData.dislocationCaptureRadius(i, 0) = radii[0];
 				data.extraData.dislocationCaptureRadius(i, 1) = radii[1];
+				/*std::cout<<"capture radius for vacancy with size "<<size<<": "<<std::endl;
+				std::cout<<"int capture: "<<radii[0]<<std::endl;
+				std::cout<<"vac capture: "<<radii[1]<<std::endl;*/
 			}
 			
 
@@ -381,6 +385,9 @@ ZrReactionNetwork::updateExtraClusterData(
 					auto radii = calcThermalRadii(alphaD, mD, temp, size, 2);
 					data.extraData.dislocationCaptureRadius(i, 0) = radii[0];
 					data.extraData.dislocationCaptureRadius(i, 1) = radii[1];
+					/*std::cout<<"capture radius for basal with size "<<size<<": "<<std::endl;
+					std::cout<<"int capture: "<<radii[0]<<std::endl;
+					std::cout<<"vac capture: "<<radii[1]<<std::endl;*/
 				}
 			}
 
@@ -392,6 +399,9 @@ ZrReactionNetwork::updateExtraClusterData(
 				auto radii = calcThermalRadii(alphaD, mD, temp, size, 1);
 				data.extraData.dislocationCaptureRadius(i, 0) = radii[0];
 				data.extraData.dislocationCaptureRadius(i, 1) = radii[1];
+				/*std::cout<<"capture radius for interstitial with size "<<size<<": "<<std::endl;
+				std::cout<<"int capture: "<<radii[0]<<std::endl;
+				std::cout<<"vac capture: "<<radii[1]<<std::endl;*/
 				}
 		
 		}); // Goes with parallel_for

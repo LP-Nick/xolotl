@@ -287,9 +287,9 @@ ReactionNetwork<TImpl>::setTemperatures(
 		tempsHost(gridTemps.data(), this->_gridSize);
 	Kokkos::deep_copy(_clusterData.h_view().temperature, tempsHost);
 
-	updateDiffusionCoefficients();
-
 	asDerived()->updateExtraClusterData(gridTemps, gridDepths);
+	
+	updateDiffusionCoefficients();
 
 	asDerived()->updateReactionRates(_currentTime);
 
