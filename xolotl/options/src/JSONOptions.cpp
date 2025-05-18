@@ -529,6 +529,11 @@ JSONOptions::defineHandlers()
 			"(default = 325)",
 			JSON_ELEM_HANDLER { checkSetParam(tree, name, transitionSize); })
 		.add(
+			"dislocationDensity", ElemType::real,
+			"The value for the network dislocation density.\n"
+			"(default = 9.5e-8)",
+			JSON_ELEM_HANDLER { checkSetParam(tree, name, dislocationDensity); })
+		.add(
 			"cascadeDose", ElemType::real,
 			"The value of the dose at which the cascade overlap effect takes "
 			"effect, if negative there won't be an effect.\n"
