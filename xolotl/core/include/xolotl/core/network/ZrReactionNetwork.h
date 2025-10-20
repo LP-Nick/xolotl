@@ -4,6 +4,7 @@
 #include <xolotl/core/network/ReactionNetwork.h>
 #include <xolotl/core/network/ZrReaction.h>
 #include <xolotl/core/network/ZrTraits.h>
+#include <xolotl/util/MathUtils.h>
 
 namespace xolotl
 {
@@ -38,7 +39,13 @@ public:
 
 	IndexType
 	checkLargestClusterId();
-
+	
+	IndexType
+	getLargestClusterId()
+	{
+		return largestClusterId;
+	}
+	
 	void
 	setConstantRates(RatesView rates, IndexType gridIndex) override;
 
@@ -107,7 +114,39 @@ public:
 	void
 	writeRxnDataLine(const std::vector<std::vector<double>>& localData,
 		double time) override;
+		
+	void
+	initializeExtraDOFs(const options::IOptions& options);
 
+	void
+	computeFluxesPreProcess(ConcentrationsView concentrations,
+		FluxesView fluxes, IndexType gridIndex, double surfaceDepth,
+		double spacing);
+
+	void
+	computePartialsPreProcess(ConcentrationsView concentrations,
+		Kokkos::View<double*> values, IndexType gridIndex, double surfaceDepth,
+		double spacing);
+
+	double
+	computeClusterRadius(double amount, int species)
+	{
+		if (species == 0){
+			//Vac case
+			return pow(amount+1, 1/2) * pow(3.23*5.17/(2* ::xolotl::core::pi), 1.0/2.0) * 1.118 / 10;
+		}
+		if (species == 1){
+			//Int case
+			return pow(amount+1, 1/2) * pow(3.23*5.17/(2* ::xolotl::core::pi), 1.0/2.0) * 1.026 / 10;
+		}
+		if (species == 2){
+			//Basal case
+			return pow(amount+1, 1/2) * 3.23 * pow(pow(3, 1/2)/(2* ::xolotl::core::pi), 1.0/2.0) / 10;
+		}
+	}
+public:
+	IndexType largestClusterId;
+	
 private:
 	double
 	checkLatticeParameter(double latticeParameter);
@@ -157,6 +196,12 @@ public:
 
 	using Superclass::Superclass;
 
+	ZrReactionGenerator(const ZrReactionNetwork& network) :
+		Superclass(network),
+		largestClusterId(network.largestClusterId)
+		{
+		}
+
 	template <typename TTag>
 	KOKKOS_INLINE_FUNCTION
 	void
@@ -166,10 +211,19 @@ public:
 	KOKKOS_INLINE_FUNCTION
 	void
 	addSinks(IndexType i, TTag tag) const;
+	
+	template <typename TTag>
+	
+	KOKKOS_INLINE_FUNCTION
+	void
+	addSingleSizeReactions(IndexType i, IndexType j, TTag tag) const;
+	
 
 private:
 	ReactionCollection<Network>
 	getReactionCollection() const;
+	
+	IndexType largestClusterId;
 };
 
 class ZrClusterUpdater

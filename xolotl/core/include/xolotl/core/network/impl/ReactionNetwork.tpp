@@ -60,6 +60,7 @@ ReactionNetwork<TImpl>::ReactionNetwork(const Subpaving& subpaving,
 	this->setEnableSink(map["sink"]);
 	this->setEnableTrapMutation(map["modifiedTM"]);
 	this->setEnableAttenuation(map["attenuation"]);
+	this->setEnableLargeCluster(map["largeCluster"]);
 	this->setEnableConstantReaction(map["constant"]);
 	std::string petscString = opts.getPetscArg();
 	auto tokens = util::Tokenizer<>{petscString}();
@@ -84,6 +85,8 @@ ReactionNetwork<TImpl>::ReactionNetwork(const Subpaving& subpaving,
 	defineMomentIds();
 
 	readReactions(opts.getTempParam(), opts.getReactionFilePath());
+	
+	asDerived()->initializeExtraDOFs(opts);
 
 	// Skip the reactions for now if using constant reactions
 	if (map["constant"])
@@ -260,6 +263,14 @@ ReactionNetwork<TImpl>::setEnableReadRates(bool read)
 {
 	this->_enableReadRates = read;
 	_clusterData.h_view().setEnableReadRates(this->_enableReadRates);
+}
+
+template <typename TImpl>
+void
+ReactionNetwork<TImpl>::setEnableLargeCluster(bool reaction)
+{
+	this->_enableLargeCluster = reaction;
+	_clusterData.h_view().setEnableLargeCluster(this->_enableLargeCluster);
 }
 
 template <typename TImpl>

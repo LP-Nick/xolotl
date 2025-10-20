@@ -403,10 +403,7 @@ public:
 	}
 
 private:
-	KOKKOS_INLINE_FUNCTION
-	void
-	computeCoefficients();
-
+	
 	KOKKOS_INLINE_FUNCTION
 	double
 	computeRate(IndexType gridIndex, double time = 0.0);
@@ -423,16 +420,6 @@ private:
 	void
 	computeRateVector(
 		RateConstantView toReturn, IndexType id, IndexType gridIndex);
-
-	KOKKOS_INLINE_FUNCTION
-	void
-	computeFlux(ConcentrationsView concentrations, FluxesView fluxes,
-		IndexType gridIndex);
-
-	KOKKOS_INLINE_FUNCTION
-	void
-	computePartialDerivatives(ConcentrationsView concentrations,
-		Kokkos::View<double*> values, IndexType gridIndex);
 
 	KOKKOS_INLINE_FUNCTION
 	void
@@ -509,6 +496,20 @@ private:
 		OwnedSubMapView backMap, IndexType subId);
 
 protected:
+	KOKKOS_INLINE_FUNCTION
+	void
+	computeCoefficients();
+
+	KOKKOS_INLINE_FUNCTION
+	void
+	computeFlux(ConcentrationsView concentrations, FluxesView fluxes,
+		IndexType gridIndex);
+	
+	KOKKOS_INLINE_FUNCTION
+	void
+	computePartialDerivatives(ConcentrationsView concentrations,
+		Kokkos::View<double*> values, IndexType gridIndex);
+	
 	static constexpr auto invalidIndex = Superclass::invalidIndex;
 	util::Array<IndexType, 2> _reactants{invalidIndex, invalidIndex};
 	util::Array<IndexType, 2> _products{invalidIndex, invalidIndex};

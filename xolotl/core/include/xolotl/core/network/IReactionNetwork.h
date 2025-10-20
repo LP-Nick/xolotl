@@ -257,6 +257,18 @@ public:
 	}
 
 	bool
+	getEnableLargeCluster() const noexcept
+	{
+		return _enableLargeCluster;
+	}
+
+	virtual void
+	setEnableLargeCluster(bool enable)
+	{
+		_enableLargeCluster = enable;
+	}
+
+	bool
 	getEnableConstantReaction() const noexcept
 	{
 		return _enableConstantReaction;
@@ -683,6 +695,7 @@ protected:
 	bool _enableSink{};
 	bool _enableTrapMutation{};
 	bool _enableAttenuation{};
+	bool _enableLargeCluster{};
 	bool _enableConstantReaction{};
 	bool _enableReducedJacobian{};
 	bool _enableReadRates{};

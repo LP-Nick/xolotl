@@ -12,6 +12,110 @@ namespace core
 {
 namespace network
 {
+
+void
+ZrReactionNetwork::initializeExtraDOFs(const options::IOptions& options)
+{
+	auto map = options.getProcesses();
+	if (not map["largeCluster"])
+		return;
+	largestClusterId = checkLargestClusterId();
+	
+	this->_clusterData.h_view().setVacId(this->_numDOFs);
+	this->_clusterData.h_view().setVacAvId(this->_numDOFs + 1);
+	this->_clusterData.h_view().setIntId(this->_numDOFs + 2);
+	this->_clusterData.h_view().setIntAvId(this->_numDOFs + 3);
+	this->_clusterData.h_view().setBasalId(this->_numDOFs + 4);
+	this->_clusterData.h_view().setBasalAvId(this->_numDOFs + 5);
+	this->_numDOFs +=6;
+}
+
+void
+ZrReactionNetwork::computeFluxesPreProcess(ConcentrationsView concentrations,
+	FluxesView fluxes, IndexType gridIndex, double surfaceDepth, double spacing)
+{
+	if (this->_enableLargeCluster) {
+		auto clusterDataMirror = this->getClusterDataMirror();
+
+		// Get the concentrations on the host
+		auto dConcs = Kokkos::subview(concentrations,
+			std::make_pair(
+				clusterDataMirror.vacId(), clusterDataMirror.basalId() + 1));
+		auto hConcs = create_mirror_view(dConcs);
+		deep_copy(hConcs, dConcs);
+
+		// Compute the average composition of each defect
+		for (int i; i < 3; i++) {
+			auto conc = hConcs(2 * i);
+			auto avComp = hConcs(2 * i + 1) / conc;
+			if (conc == 0.0)
+				avComp = 0.0;
+			// Compute and save the radius from that
+			switch (i) {
+			// Vac
+			case 0:
+				this->_clusterData.h_view().setVacAvRad(util::max(0.0,
+					computeClusterRadius(
+						avComp, i)));
+			// Int
+			case 1:
+				this->_clusterData.h_view().setIntAvRad(util::max(0.0,
+					computeClusterRadius(
+						avComp, i)));
+			// Basal
+			case 2:
+				this->_clusterData.h_view().setBasalAvRad(util::max(0.0,
+					computeClusterRadius(
+						avComp, i)));
+			}
+		}
+	}
+}
+
+void
+ZrReactionNetwork::computePartialsPreProcess(
+	ConcentrationsView concentrations, Kokkos::View<double*> values,
+	IndexType gridIndex, double surfaceDepth, double spacing)
+{
+	if (this->_enableLargeCluster) {
+		auto clusterDataMirror = this->getClusterDataMirror();
+
+		// Get the concentrations on the host
+		auto dConcs = Kokkos::subview(concentrations,
+			std::make_pair(
+				clusterDataMirror.vacId(), clusterDataMirror.basalId() + 1));
+		auto hConcs = create_mirror_view(dConcs);
+		deep_copy(hConcs, dConcs);
+
+		// Compute the average composition of each defect
+		for (int i; i < 3; i++) {
+			auto conc = hConcs(2 * i);
+			auto avComp = hConcs(2 * i + 1) / conc;
+			if (conc == 0.0)
+				avComp = 0.0;
+			// Compute and save the radius from that
+			switch (i) {
+			// Vac
+			case 0:
+				this->_clusterData.h_view().setVacAvRad(util::max(0.0,
+					computeClusterRadius(
+						avComp, i)));
+			// Int
+			case 1:
+				this->_clusterData.h_view().setIntAvRad(util::max(0.0,
+					computeClusterRadius(
+						avComp, i)));
+			// Basal
+			case 2:
+				this->_clusterData.h_view().setBasalAvRad(util::max(0.0,
+					computeClusterRadius(
+						avComp, i)));
+			}
+		}
+	}
+}
+
+
 namespace detail
 {
 template <typename TTag>
@@ -74,7 +178,11 @@ ZrReactionGenerator::operator()(IndexType i, IndexType j, TTag tag) const
 	if (diffusionFactor(i) == 0.0 && diffusionFactor(j) == 0.0) {
 		return;
 	}
-
+	
+	// Large Cluster Reactions
+	if (this->_clusterData.enableLargeCluster())
+		addSingleSizeReactions(i, j, tag);
+	
 	// Get the composition of each cluster
 	const auto& cl1Reg = this->getCluster(i).getRegion();
 	const auto& cl2Reg = this->getCluster(j).getRegion();
@@ -345,6 +453,75 @@ ZrReactionGenerator::getReactionCollection() const
 		this->getSinkReactions(), this->getConstantReactions());
 	return ret;
 }
+
+template <typename TTag>
+KOKKOS_INLINE_FUNCTION
+void
+ZrReactionGenerator::addSingleSizeReactions(
+	IndexType i, IndexType j, TTag tag) const
+{
+	using Species = typename NetworkType::Species;
+	using Composition = typename NetworkType::Composition;
+
+	auto vacId = this->_clusterData.vacId();
+	auto intId = this->_clusterData.intId();
+	auto basalId = this->_clusterData.basalId();
+
+	if (i == j) {
+		const auto& clReg = this->getCluster(i).getRegion();
+		Composition lo = clReg.getOrigin();
+
+		// Check reaction with largest cluster
+		if (not clReg.isSimplex())
+			return;
+
+		// V case
+		if (lo.isOnAxis(Species::V)) {
+			// V_k + L -> L
+			this->addProductionReaction(tag, {i, vacId, vacId});
+		}
+		// I case
+		else if (lo.isOnAxis(Species::I)) {
+			// I_k + L -> L
+			this->addProductionReaction(tag, {i, vacId, vacId});
+		}
+	}
+
+	// Get the composition of each cluster
+	const auto& cl1Reg = this->getCluster(i).getRegion();
+	const auto& cl2Reg = this->getCluster(j).getRegion();
+	Composition lo1 = cl1Reg.getOrigin();
+	Composition hi1 = cl1Reg.getUpperLimitPoint();
+	Composition lo2 = cl2Reg.getOrigin();
+	Composition hi2 = cl2Reg.getUpperLimitPoint();
+
+	// Find the edge of the phase space
+	const auto& largestReg = this->getCluster(largestClusterId).getRegion();
+	Composition hiLargest = largestReg.getUpperLimitPoint();
+	auto largestSize = hiLargest[Species::V] - 1; // Don't know which one was saved
+
+	// V_a + V_b -> V
+	if (hi1[Species::V] + hi2[Species::V] - 2 > largestSize) {
+		this->addProductionReaction(tag, {i, j, vacId});
+	}
+
+
+/* we'll fix this later
+	// I_a + V -> V_b
+	if ((lo1.isOnAxis(Species::I) and lo2.isOnAxis(Species::V)) or
+		(lo1.isOnAxis(Species::V) and lo2.isOnAxis(Species::I))) {
+		// It should be around the largest size value
+		if (hi1[Species::V] + hi2[Species::V] + hi1[Species::I] +
+				hi2[Species::I] - 4 >
+			largestSize) {
+			// Need to know which one is I
+			auto iId = lo1[Species::I] > 0 ? i : j;
+			auto vId = lo1[Species::I] > 0 ? j : i;
+			//			this->addProductionReaction(tag, {iId, voidId, vId});
+		}
+	}*/
+}
+
 } // namespace detail
 
 inline detail::ZrReactionGenerator

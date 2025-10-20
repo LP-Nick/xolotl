@@ -145,6 +145,9 @@ private:
 		LATTICE_PARAM,
 		FISSION_RATE,
 		ZETA,
+		AV_VAC_RAD,
+		AV_INT_RAD,
+		AV_BASAL_RAD,
 		DISLOCATION_DENSITY,
 		I_FORMATION,
 		XE_FORMATION,
@@ -156,6 +159,12 @@ private:
 	enum IntValsIndex : int
 	{
 		TRANSITION_SIZE = 0,
+		VAC_ID,
+		INT_ID,
+		BASAL_ID,
+		AV_VAC_ID,
+		AV_INT_ID,
+		AV_BASAL_ID,
 		NUM_INT_VALS
 	};
 
@@ -167,6 +176,7 @@ private:
 		SINK,
 		TRAP_MUTATION,
 		READ_RATES,
+		LARGE_CLUSTER,
 		CONSTANT_REACTION,
 		NUM_BOOL_VALS
 	};
@@ -232,6 +242,45 @@ public:
 	setZeta(double val)
 	{
 		setVal(_floatVals, ZETA, val);
+	}
+
+	KOKKOS_INLINE_FUNCTION
+	double
+	vacAvRad() const
+	{
+		return _floatVals[AV_VAC_RAD];
+	}
+
+	void
+	setVacAvRad(double val)
+	{
+		setVal(_floatVals, AV_VAC_RAD, val);
+	}
+
+	KOKKOS_INLINE_FUNCTION
+	double
+	intAvRad() const
+	{
+		return _floatVals[AV_INT_RAD];
+	}
+
+	void
+	setIntAvRad(double val)
+	{
+		setVal(_floatVals, AV_INT_RAD, val);
+	}
+
+	KOKKOS_INLINE_FUNCTION
+	double
+	basalAvRad() const
+	{
+		return _floatVals[AV_BASAL_RAD];
+	}
+
+	void
+	setBasalAvRad(double val)
+	{
+		setVal(_floatVals, AV_BASAL_RAD, val);
 	}
 
 	KOKKOS_INLINE_FUNCTION
@@ -309,6 +358,84 @@ public:
 	setDislocationDensity(double val)
 	{
 		setVal(_floatVals, DISLOCATION_DENSITY, val);
+	}
+
+	KOKKOS_INLINE_FUNCTION
+	int
+	vacId() const
+	{
+		return _intVals[VAC_ID];
+	}
+
+	void
+	setVacId(int val)
+	{
+		setVal(_intVals, VAC_ID, val);
+	}
+
+	KOKKOS_INLINE_FUNCTION
+	int
+	intId() const
+	{
+		return _intVals[INT_ID];
+	}
+
+	void
+	setIntId(int val)
+	{
+		setVal(_intVals, INT_ID, val);
+	}
+
+	KOKKOS_INLINE_FUNCTION
+	int
+	basalId() const
+	{
+		return _intVals[BASAL_ID];
+	}
+
+	void
+	setBasalId(int val)
+	{
+		setVal(_intVals, BASAL_ID, val);
+	}
+
+	KOKKOS_INLINE_FUNCTION
+	int
+	vacAvId() const
+	{
+		return _intVals[AV_VAC_ID];
+	}
+
+	void
+	setVacAvId(int val)
+	{
+		setVal(_intVals, AV_VAC_ID, val);
+	}
+
+	KOKKOS_INLINE_FUNCTION
+	int
+	intAvId() const
+	{
+		return _intVals[AV_INT_ID];
+	}
+
+	void
+	setIntAvId(int val)
+	{
+		setVal(_intVals, AV_INT_ID, val);
+	}
+
+	KOKKOS_INLINE_FUNCTION
+	int
+	basalAvId() const
+	{
+		return _intVals[AV_BASAL_ID];
+	}
+
+	void
+	setBasalAvId(int val)
+	{
+		setVal(_intVals, AV_BASAL_ID, val);
 	}
 
 	KOKKOS_INLINE_FUNCTION
@@ -400,6 +527,19 @@ public:
 	setEnableConstantReaction(bool val)
 	{
 		setVal(_boolVals, CONSTANT_REACTION, val);
+	}
+
+	KOKKOS_INLINE_FUNCTION
+	bool
+	enableLargeCluster() const
+	{
+		return _boolVals[LARGE_CLUSTER];
+	}
+
+	void
+	setEnableLargeCluster(bool val)
+	{
+		setVal(_boolVals, LARGE_CLUSTER, val);
 	}
 
 private:

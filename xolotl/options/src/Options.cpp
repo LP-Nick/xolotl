@@ -455,7 +455,9 @@ Options::setProcesses(const std::string& processList)
 	processMap["heterogeneous"] = false;
 	processMap["sink"] = false;
 	processMap["soret"] = false;
+	processMap["largeCluster"] = false;
 	processMap["constant"] = false;
+	processMap["largeCluster"] = false;
 	processMap["noSolve"] = false;
 
 	// Break the argument into tokens.

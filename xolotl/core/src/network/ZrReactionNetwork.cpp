@@ -449,6 +449,45 @@ ZrReactionNetwork::addMonitorDataValues(Kokkos::View<const double*> conc,
 		totalVals[(6 * id()) + 3] += totals[3] * fac;
 		totalVals[(6 * id()) + 4] += totals[4] * fac;
 		totalVals[(6 * id()) + 5] += totals[5] * 2.0 * fac;
+	
+	
+			// Single Size Cluster Model
+			if (this->_enableLargeCluster) {
+				
+				IndexType ssbmId = 0;
+				
+				switch (id() ) {
+					
+					// Vac
+					case 0:
+						ssbmId = this->_clusterData.h_view().vacId();
+						break;
+						
+					default: 
+						ssbmId = 0;
+						break;
+				}
+				// Compute average numbers
+				auto vConc = 0.0;
+				auto avComp = 0.0;
+				if (ssbmId > 0){
+					vConc = conc(ssbmId);
+					if (vConc > 1.0e-16)
+						avComp = conc(ssbmId+1)/vConc;
+				}
+				
+				// Add the single size data for large vac
+				auto avRadius = util::max(0.0,
+					computeClusterRadius(
+						avComp, 0)); // fix later but 0 is index for large vac in computeClusterRadius
+				
+				totalVals[(4 * id()) + 0] += vConc * fac;
+				totalVals[(4 * id()) + 1] += vConc * avRadius * 2.0 * fac;
+				if (avComp > minSizes[id()]) {
+					totalVals[(4 * id()) + 2] += vConc * fac;
+					totalVals[(4 * id()) + 3] += vConc * avRadius * 2.0 * fac;
+				}
+		}
 	}
 }
 
@@ -470,9 +509,14 @@ ZrReactionNetwork::writeMonitorDataLine(
 			if (globalData[id(0)] > 1.0e-16) {
 				globalData[id(2)] /= globalData[id(0)];
 			}
+			else
+				globalData[id(2)] = 0.0;
+			
 			if (globalData[id(3)] > 1.0e-16) {
 				globalData[id(5)] /= globalData[id(3)];
 			}
+			else
+				globalData[id(5)] = 0.0;
 		}
 
 		// Set the output precision
@@ -485,6 +529,7 @@ ZrReactionNetwork::writeMonitorDataLine(
 		outputFile << std::setprecision(outputPrecision);
 
 		// Output the data
+		outputFile << std::endl;
 		outputFile << time << " ";
 		for (auto i = 0; i < numSpecies; ++i) {
 			auto id = [i](std::size_t n) { return 6 * i + n; };
@@ -492,7 +537,7 @@ ZrReactionNetwork::writeMonitorDataLine(
 					   << globalData[id(2)] << " " << globalData[id(3)] << " "
 					   << globalData[id(4)] << " " << globalData[id(5)] << " ";
 		}
-		outputFile << std::endl;
+		
 
 		// Close the output file
 		outputFile.close();

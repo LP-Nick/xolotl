@@ -169,6 +169,11 @@ public:
 	}
 
 	void
+	initializeExtraDOFs(const options::IOptions&)
+	{
+	}
+
+	void
 	updateExtraClusterData(
 		const std::vector<double>&, const std::vector<double>&)
 	{
@@ -219,6 +224,9 @@ public:
 
 	void
 	setEnableTrapMutation(bool reaction) override;
+	
+	void
+	setEnableLargeCluster(bool reaction) override;
 
 	void
 	setEnableConstantReaction(bool reaction) override;
