@@ -41,23 +41,35 @@ getRate(const TRegion& pairCl0Reg, const TRegion& pairCl1Reg, const double r0,
 	double Plv = 1.0; // Capture efficiency for vacancy a-loops
 
 	// Determine parameters for cluster 0 based on cluster type and size
-	if (cl0IsV)
+	if (cl0IsV){
 		n0 = lo0[Species::V];
-	else if (lo0.isOnAxis(Species::Basal))
+		std::cout<< "cl0: v" << n0 << std::endl;
+	}
+	else if (lo0.isOnAxis(Species::Basal)){
 		n0 = lo0[Species::Basal];
-	else
+		std::cout<< "cl0: b" << n0 << std::endl;
+	}
+	else{
 		n0 = lo0[Species::I];
+		std::cout<< "cl0: i" << n0 << std::endl;
+	}
 	bool cl0IsLoop = (n0 > 9);
-
+	
 	// Determine parameters for cluster 1 based on cluster type and size
-	if (cl1IsV)
+	if (cl1IsV){
 		n1 = lo1[Species::V];
-	else if (lo1.isOnAxis(Species::Basal))
+		std::cout<< "cl1: v" << n1 << std::endl;
+	}
+	else if (lo1.isOnAxis(Species::Basal)){
 		n1 = lo1[Species::Basal];
-	else
+		std::cout<< "cl1: b" << n1 << std::endl;
+	}
+	else{
 		n1 = lo1[Species::I];
+		std::cout<< "cl1: i" << n1 << std::endl;
+	}
 	bool cl1IsLoop = (n1 > 9);
-
+	
 	// Cluster 0 is a dislocation loop
 	if (cl0IsLoop) {
 		// Define the dislocation capture radius, transition coefficient, and
@@ -78,7 +90,25 @@ getRate(const TRegion& pairCl0Reg, const TRegion& pairCl1Reg, const double r0,
 		}
 		else
 			Pl = 0.70 * pow(p, -2) + 0.78 * p - 0.47;
-
+		
+			
+		//std::cout<< "vac loop added radii : " << r0 + r1 + rd <<std::endl;
+		std::cout<< "rateSpherical: " << rateSpherical << std::endl;
+		std::cout<< "rateToroidal: " << rateToroidal << std::endl;
+		std::cout<< "capture efficiency: " << Pl << std::endl;
+		std::cout<< "alpha: " << alpha << std::endl;
+		std::cout<< "dc0: " << dc0 << std::endl;
+		std::cout<< "dc1: " << dc1 << std::endl;
+		//std::cout << "getRate, vac r0: " << r0 <<std::endl;
+		//std::cout<< "getRate, r1: " << r1 << std::endl;
+		//std::cout<< "vac rd: " << rd << std::endl;
+		//std::cout<< "vac size: " << n0 << std::endl;
+		//std::cout<< std::endl;
+		
+		std::cout<<"rate: "<<
+				((1 - alpha) * rateToroidal * Pl + alpha * rateSpherical) *
+			(dc0 + dc1) << std::endl;
+		std::cout<<std::endl;
 		return ((1 - alpha) * rateToroidal * Pl + alpha * rateSpherical) *
 			(dc0 + dc1);
 	}
@@ -104,11 +134,31 @@ getRate(const TRegion& pairCl0Reg, const TRegion& pairCl1Reg, const double r0,
 		else
 			Pl = 0.70 * pow(p, -2) + 0.78 * p - 0.47;
 
+			
+			//std::cout<< "vac loop added radii : " << r0 + r1 + rd <<std::endl;
+			std::cout<< "rateSpherical: " << rateSpherical << std::endl;
+			std::cout<< "rateToroidal: " << rateToroidal << std::endl;
+			std::cout<< "capture efficiency: " << Pl << std::endl;
+			std::cout<< "alpha: " << alpha << std::endl;
+			std::cout<< "dc0: " << dc0 << std::endl;
+			std::cout<< "dc1: " << dc1 << std::endl;
+			//std::cout << "getRate, vac r1: " << r0 <<std::endl;
+			//std::cout<< "getRate, r0: " << r1 << std::endl;
+			//std::cout<< "vac rd: " << rd << std::endl;*/
+			//std::cout<< "vac size: " << n1 << std::endl;
+			//std::cout<< std::endl;
+		
+		std::cout<<"rate: "<<
+				((1 - alpha) * rateToroidal * Pl + alpha * rateSpherical) *
+			(dc0 + dc1) << std::endl;
+		std::cout<<std::endl;
 		return ((1 - alpha) * rateToroidal * Pl + alpha * rateSpherical) *
 			(dc0 + dc1);
 	}
 
 	// None of the clusters are loops (interaction is based on spherical volume)
+	std::cout<< "rate: " << zs * (dc0 + dc1) << std::endl;
+	std::cout << std::endl;
 	return zs * (dc0 + dc1);
 }
 } // namespace zr
@@ -119,7 +169,11 @@ ZrProductionReaction::getRateForProduction(IndexType gridIndex)
 {
 	auto cl0 = this->_clusterData->getCluster(_reactants[0]);
 	auto cl1 = this->_clusterData->getCluster(_reactants[1]);
-	
+	std::cout<<"in getRateForProduction"<<std::endl;
+	std::cout << "cluster 0 id: " << _reactants[0] << std::endl;
+	std::cout << "cluster 1 id: " << _reactants[1] << std::endl;
+	std::cout<<"large cluster rxn: "<<
+		isLargeClusterReaction << std::endl;
 	// Create an array with all possible dislocation capture radii
 	// rdCl = {(rdI for cl0, rdV for cl0), (rdI for cl1, rdV for cl1)}
 	double rdCl[2][2] = {{0.0, 0.0}, {0.0, 0.0}};
@@ -129,9 +183,15 @@ ZrProductionReaction::getRateForProduction(IndexType gridIndex)
 		double r0 = cl0.getReactionRadius();
 		double r1 = cl1.getReactionRadius();
 
+		//std::cout << "getRateForProduction, not large cluster, r0: " << r0 <<std::endl;
+		//std::cout << "getRateForProduction, not large cluster, r1: " << r1 <<std::endl;
+
 		double dc0 = cl0.getDiffusionCoefficient(gridIndex);
 		double dc1 = cl1.getDiffusionCoefficient(gridIndex);
-
+		
+		std::cout<<"getRateForProduction dc0: "<< dc0 << std::endl;
+		std::cout<<"getRateForProduction dc1: "<< dc1 << std::endl;
+		
 		// Determine which cluster is mobile and retrieve its anisotropy ratio
 		double p = 0;
 		if (dc0 > 0)
@@ -163,6 +223,9 @@ ZrProductionReaction::getRateForProduction(IndexType gridIndex)
 	double r0 = 0.0, r1 = 0.0, dc0 = 0.0, dc1 = 0.0, p=0.0;
 	Region cl0Reg = dummyRegion, cl1Reg = dummyRegion;
 	auto numClusters = this->_clusterData->numClusters;
+	//std::cout << "reactant 0 id: " << _reactants[0] <<std::endl;
+	//std::cout << "reactant 1 id: " << _reactants[1] <<std::endl;
+	//std::cout << "num clusters: " << numClusters <<std::endl;
 	
 	if (this->_reactants[0] >= numClusters){
 		auto shift = (this->_reactants[0] - numClusters)/2;
@@ -170,24 +233,32 @@ ZrProductionReaction::getRateForProduction(IndexType gridIndex)
 		// Vac
 		case 0:
 			r0 = this->_clusterData->vacAvRad();
+			//std::cout << "getRateForProduction, large cluster is r0, r0: " << r0 <<std::endl;
 			cl0Reg[Species::V] = {1, 2};
+			rdCl[0][0] = 0.79;
+			rdCl[0][1] = 1.59;
 			break;
 		// Int
 		case 1:
 			r0 = this->_clusterData->intAvRad();
 			cl0Reg[Species::I] = {1, 2};
+			rdCl[0][0] = 1.85;
+			rdCl[0][1] = 1.04;
 			break;
 		// Basal
 		case 2:
 			r0 = this->_clusterData->basalAvRad();
 			cl0Reg[Species::Basal] = {1, 2};
+			rdCl[0][0] = 0.787;
+			rdCl[0][1] = 1.072;
 			break;
 		}
 	}
 	else {
 		auto cl0 = this->_clusterData->getCluster(_reactants[0]);
-		double r0 = cl0.getReactionRadius();
-		double dc0 = cl0.getDiffusionCoefficient(gridIndex);
+		r0 = cl0.getReactionRadius();
+		dc0 = cl0.getDiffusionCoefficient(gridIndex);
+		//std::cout << "getRateForProduction, large cluster is r1, r0: " << r0 <<std::endl;
 		//anisotropy ratio
 		//double p = 0;
 		if (dc0 > 0)
@@ -206,25 +277,33 @@ ZrProductionReaction::getRateForProduction(IndexType gridIndex)
 		// Vac
 		case 0:
 			r1 = this->_clusterData->vacAvRad();
+			//std::cout << "getRateForProduction, large cluster is r1, r1: " << r1 <<std::endl;
 			cl1Reg[Species::V] = {1, 2};
+			rdCl[1][0] = 0.79;
+			rdCl[1][1] = 1.59;
 			break;
 		// Int
 		case 1:
 			r1 = this->_clusterData->intAvRad();
 			cl1Reg[Species::I] = {1, 2};
+			rdCl[1][0] = 1.85;
+			rdCl[1][1] = 1.04;
 			break;
 		// Basal
 		case 2:
 			r1 = this->_clusterData->basalAvRad();
 			cl1Reg[Species::Basal] = {1, 2};
+			rdCl[1][0] = 0.787;
+			rdCl[1][1] = 1.072;
 			break;
 		}
 	}
 	
 	else {
 		auto cl1 = this->_clusterData->getCluster(_reactants[1]);
-		double r1 = cl1.getReactionRadius();
-		double dc1 = cl1.getDiffusionCoefficient(gridIndex);
+		r1 = cl1.getReactionRadius();
+		dc1 = cl1.getDiffusionCoefficient(gridIndex);
+		//std::cout << "getRateForProduction, large cluster is r0, r1: " << r1 <<std::endl;
 		//anisotropy ratio
 		//double p = 0;
 		if (dc1 > 0)
@@ -237,6 +316,11 @@ ZrProductionReaction::getRateForProduction(IndexType gridIndex)
 			_reactants[1], 1);
 	}
 	
+	std::cout<<"large getRateForProduction dc0: "<< dc0 << std::endl;
+	std::cout<<"large getRateForProduction dc1: "<< dc1 << std::endl;
+	//std::cout << "getRateForProduction final check" << std::endl;
+	//std::cout << "r0: " << r0 << std::endl;
+	//std::cout << "r1: " << r1 << std::endl;
 	return zr::getRate(cl0Reg, cl1Reg, r0, r1, dc0, dc1, rdCl,
 			p, this->_clusterData->transitionSize());
 }
@@ -272,7 +356,60 @@ ZrProductionReaction::computeFlux(
 	// The rate need to be computed each time because it depends on the current
 	// large cluster size
 	auto rate = getRateForProduction(gridIndex);
+	std::cout << "computeFlux rate: " << rate <<std::endl;
+	std::cout << std::endl;
+	
+	/*auto cl0 = this->_clusterData->getCluster(_reactants[0]);
+	auto cl1 = this->_clusterData->getCluster(_reactants[1]);
+	
+	using Species = typename TRegion::EnumIndex;
+	const TRegion& pairCl0Reg = cl0.getRegion();
+	const TRegion& pairCl1Reg = cl1.getRegion();
+	
+	
+	xolotl::core::network::detail::Composition<typename TRegion::VectorType,
+		Species>
+		lo0 = pairCl0Reg.getOrigin();
+	
+	xolotl::core::network::detail::Composition<typename TRegion::VectorType,
+		Species>
+		lo1 = pairCl1Reg.getOrigin();
+	
+	bool cl0IsV = lo0.isOnAxis(Species::V);
+	bool cl1IsV = lo1.isOnAxis(Species::V);
+	
+		std::cout << "reaction rate between clusters "; 
+	
+	if (cl0IsV){
+		n0 = lo0[Species::V];
+		std::cout<< "v" << n0;
+	}
+	else if (lo0.isOnAxis(Species::Basal)){
+		n0 = lo0[Species::Basal];
+		std::cout<< "b" << n0;
+	}
+	else {
+		n0 = lo0[Species::I];
+		std::cout<< "i" << n0;
+	}
+	cl0 << " and " 
+	
+	if (cl1IsV){
+		n1 = lo1[Species::V];
+		std::cout<< "v" << n1;
+	}
+	else if (lo1.isOnAxis(Species::Basal)){
+		n1 = lo1[Species::Basal];
+		std::cout<< "b" << n1;
+	}
+	else {
+		n1 = lo1[Species::I];
+		std::cout<< "i" << n1;
+	}
+		std::cout << ": " << rate <<std::endl;*/
+	
 
+	
 	constexpr auto speciesRangeNoI = NetworkType::getSpeciesRangeNoI();
 	auto numClusters = this->_clusterData->numClusters;
 	auto vacId = this->_clusterData->vacId();
@@ -312,22 +449,19 @@ ZrProductionReaction::computeFlux(
 					//Compute flux
 					double f = this->_coefs(0, 0, 0, 0) * concentrations(stdClusterId)
 						* concentrations(ssbmId) * rate;
-					// The standard cluster always loses the flux
-					Kokkos::atomic_sub(&fluxes[stdClusterId], f);
 					
-					// The large V size decreases
-					/*Kokkos::atomic_sub(&fluxes[ssbmId+1], f * comp[Species::I]);
+					// Special factor to deal with the threshold size
+					double gauss = 1.0;
 					
-					// Special case where the product is not the single size NOT USED CURRENTLY
+					// Special case where the product is not the single size
 					if (this->_products[0] < numClusters){
 						// Only if large vacancy cluster has a specific size
-						auto avVac = concentrations(this->_clusterData->vacAvId()) / concentrations(ssbmId);
+						auto avVac = concentrations(ssbmId+1) / concentrations(ssbmId);
 						if (concentrations(ssbmId) == 0.0)
 								avVac = 0.0;
 						
 						// Get product composition
 						auto pr = this->_clusterData->getCluster(this->_products[0]);
-						
 						auto prReg = pr.getRegion();
 						Composition prComp(prReg.getOrigin());
 						
@@ -335,140 +469,31 @@ ZrProductionReaction::computeFlux(
 						double target = prComp[Species::V] + comp[Species::I];
 						
 						// Gaussian function around it
-						double gauss = exp(-(avVac - target) * (avVac - target) / 0.5);
-						
+						double twoSigmaTwo = 0.1;
+						gauss =
+							exp(-(avVac - target) * (avVac - target) / twoSigmaTwo) /
+							sqrt(::xolotl::core::pi * twoSigmaTwo);
+							
 						// The large cluster concentration decreases
 						Kokkos::atomic_sub(&fluxes[ssbmId], f * gauss);
+						// The product concentration increases
+						Kokkos::atomic_add(&fluxes[this->_products[0]], f * gauss);
 						
 						// The V size decreases even more
-						Kokkos::atomic_sub(&fluxes[this->_clusterData->voidAvId()], f * prComp[Species::V]);
-					}*/
+						Kokkos::atomic_sub(&fluxes[this->_clusterData->vacAvId()], 
+							f * (prComp[Species::V]) * gauss);
+					}
+					// In every case
+					
+					// Standard Cluster always loses the flux
+					Kokkos::atomic_sub(&fluxes[stdClusterId], f * gauss);
+					
+					// The V size decreases
+					Kokkos::atomic_sub(&fluxes[ssbmId + 1], f * comp[Species::I] * gauss);
 				}
 			}
 			
-	/* Large interstitial cluster is one of the reactants 
-	else if ((this->_reactants[0] - numClusters)/2 == 1 or
-			(this->_reactants[1] - numClusters)/2 == 1) {
-				// Get standard cluster
-				auto stdClusterId = (this->_reactants[0] >= numClusters) ?
-					this->_reactants[1]:
-					this->_reactants[0];
-				auto cl = this->_clusterData->getCluster(stdClusterId);
-				auto clReg = cl.getRegion();
-				auto orig = clReg.getOrigin();
-				Composition comp(orig);
-				
-				// Interstitial Standard Cluster Case
-				if (comp[Species::I] > 0){
-					//Compute flux
-					double f = this->coefs(0, 0, 0, 0) * concentrations(stdClusterId)
-						* concentrations(intId) * rate;
-					// The standard cluster always loses the flux
-					Kokkos::atomic_sub(&fluxes[stdClusterId], f);
-					
-					// The Large I size increases
-					Kokkos::atomic_add(&fluxes[this->_clusterData->intAvId()], f * comp[Species::I]);
-				}
-				
-				// Vacancy Standard Cluster Case
-				if (comp[Species::V] > 0){
-					//Compute flux
-					double f = this->coefs(0, 0, 0, 0) * concentrations(stdClusterId)
-						* concentrations(intId) * rate;
-					// The standard cluster always loses the flux
-					Kokkos::atomic_sub(&fluxes[stdClusterId], f);
-					
-					// The large I size decreases
-					Kokkos::atomic_sub(&fluxes[this->_clusterData->intAvId()], f * comp[Species::V]);
-					
-					// Special case where the product is not the single size
-					if (this->_products[0] < numClusters){
-						// Only if large interstitial cluster has a specific size
-						auto avInt = concentrations(this->_clusterData->intAvId()) / concentrations(intId);
-						if (concentrations(intId) == 0.0)
-								avInt = 0.0;
-						
-						// Get product composition
-						auto pr = this->_clusterData->getCluster(this->_products[0]);
-						
-						auto prReg = pr.getRegion();
-						Composition prComp(prReg.getOrigin());
-						
-						// Target value for the reaction to happen
-						double target = prComp[Species::I] + comp[Species::V];
-						
-						// Gaussian function around it
-						double gauss = exp(-(avInt - target) * (avInt - target) / 0.5);
-						
-						// The large cluster concentration decreases
-						Kokkos::atomic_sub(&fluxes[intId], f * gauss);
-						// The product concentration increases
-						Kokkos::atomic_add(&fluxes[this->_products[0]], f * gauss);
-					}
-				}
-			}
 	
-	// Large basal cluster is one of the reactants
-	else if ((this->_reactants[0] - numClusters)/2 == 2 or
-			(this->_reactants[1] - numClusters)/2 == 2) {
-				// Get standard cluster
-				auto stdClusterId = (this->_reactants[0] >= numClusters) ?
-					this->_reactants[1]:
-					this->_reactants[0];
-				auto cl = this->_clusterData->getCluster(stdClusterId);
-				auto clReg = cl.getRegion();
-				auto orig = clReg.getOrigin();
-				Composition comp(orig);
-				
-				// Vacancy Standard Cluster Case
-				if (comp[Species::V] > 0){
-					//Compute flux
-					double f = this->coefs(0, 0, 0, 0) * concentrations(stdClusterId)
-						* concentrations(basalId) * rate;
-					// The standard cluster always loses the flux
-					Kokkos::atomic_sub(&fluxes[stdClusterId], f);
-					
-					// The Large Basal size increases
-					Kokkos::atomic_add(&fluxes[this->_clusterData->basalAvId()], f * comp[Species::V]);
-				}
-				
-				// Interstitial Standard Cluster Case
-				if (comp[Species::I] > 0){
-					//Compute flux
-					double f = this->coefs(0, 0, 0, 0) * concentrations(stdClusterId)
-						* concentrations(basalId) * rate;
-					// The standard cluster always loses the flux
-					Kokkos::atomic_sub(&fluxes[stdClusterId], f);
-					
-					// The large Basal size decreases
-					Kokkos::atomic_sub(&fluxes[this->_clusterData->basalAvId()], f * comp[Species::I]);
-					
-					// Special case where the product is not the single size
-					if (this->_products[0] < numClusters){
-						// Only if large basal cluster has a specific size
-						auto avBasal = concentrations(this->_clusterData->basalAvId()) / concentrations(basalId);
-						if (concentrations(basalId) == 0.0)
-								avBasal = 0.0;
-						
-						// Get product composition
-						auto pr = this->_clusterData->getCluster(this->_products[0]);
-						
-						auto prReg = pr.getRegion();
-						Composition prComp(prReg.getOrigin());
-						
-						// Target value for the reaction to happen
-						double target = prComp[Species::Basal] + comp[Species::I];
-						
-						// Gaussian function around it
-						double gauss = exp(-(avBasal - target) * (avBasal - target) / 0.5);
-						
-						// The large cluster concentration decreases
-						Kokkos::atomic_sub(&fluxes[basalId], f * gauss);
-						// The product concentration increases
-						Kokkos::atomic_add(&fluxes[this->_products[0]], f * gauss);
-					}
-				}
-			}*/
 	
 			// Large cluster is only a product
 			else {
@@ -607,18 +632,62 @@ ZrProductionReaction::computePartialDerivatives(
 					//Compute flux
 					double f = this->_coefs(0, 0, 0, 0) * rate;
 					
-					// The standard cluster always loses the flux
-					if (this->_reactants[0] >= numClusters){
-						Kokkos::atomic_sub(&values(this->_connEntries[1][0][0][0]), f * stdC);
-						Kokkos::atomic_sub(&values(this->_connEntries[1][0][1][0]), f * vC);
+					// Special factor to deal with the threshold size
+					double gauss = 1.0;
+					
+					// Special case where the product is not the single size
+					if (this->_products[0] < numClusters){
+						// Only if large vacancy cluster has a specific size
+						auto avVac = concentrations(ssbmId+1) / concentrations(ssbmId);
+						if (concentrations(ssbmId) == 0.0)
+								avVac = 0.0;
+						
+						// Get product composition
+						auto pr = this->_clusterData->getCluster(this->_products[0]);
+						auto prReg = pr.getRegion();
+						Composition prComp(prReg.getOrigin());
+						
+						// Target value for the reaction to happen
+						double target = prComp[Species::V] + comp[Species::I];
+						
+						// Gaussian function around it
+						double twoSigmaTwo = 0.1;
+						double gauss = exp(-(avVac - target) * (avVac - target) / twoSigmaTwo)/
+							sqrt(::xolotl::core::pi * twoSigmaTwo);
+						
+						//Update rate
+						f = this->_coefs(0, 0, 0, 0) * rate * gauss;
+						
+						// The large cluster concentration decreases
+						if (this->_reactants[0] >= numClusters) {
+							Kokkos::atomic_sub(
+								&values(this->_connEntries[0][0][0][0]), f * stdC);
+							Kokkos::atomic_sub(
+								&values(this->_connEntries[0][0][1][0]), f * vC);
+						}
+						else {
+							Kokkos::atomic_sub(
+								&values(this->_connEntries[1][0][1][0]), f * stdC);
+							Kokkos::atomic_sub(
+								&values(this->_connEntries[1][0][0][0]), f * vC);
+						}
+						
+						// The product concentration increases
+						if (this->_reactants[0] >= numClusters) {
+							Kokkos::atomic_add(
+								&values(this->_connEntries[2][0][0][0]), f * stdC);
+							Kokkos::atomic_add(
+								&values(this->_connEntries[2][0][1][0]), f * vC);
 					}
 					else {
-						Kokkos::atomic_sub(&values(this->_connEntries[0][0][1][0]), f * stdC);
-						Kokkos::atomic_sub(&values(this->_connEntries[0][0][0][0]), f * vC);
+						Kokkos::atomic_add(
+							&values(this->_connEntries[2][0][1][0]), f * stdC);
+						Kokkos::atomic_add(
+							&values(this->_connEntries[2][0][0][0]), f * vC);
 					}
-					
-					// The large V size decreases
-					f = this->_coefs(0, 0, 0, 0) * rate * comp[Species::I];
+					// The V size decreases even more
+					f = this->_coefs(0, 0, 0, 0) * rate *
+						prComp[Species::V] * gauss;
 					if (this->_reactants[0] >= numClusters) {
 						Kokkos::atomic_sub(
 							&values(this->_connEntries[0][1][0][0]), f * stdC);
@@ -631,52 +700,38 @@ ZrProductionReaction::computePartialDerivatives(
 						Kokkos::atomic_sub(
 							&values(this->_connEntries[1][1][0][0]), f * vC);
 					}
-					/*
-					// Special case where the product is not the single size
-					if (this->_products[0] < numClusters){
-						f = this->_coefs(0, 0, 0, 0) * rate;
-						// Only if large vacancy cluster has a specific size
-						auto avVac = concentrations(this->_clusterData->vacAvId()) / concentrations(vacId);
-						if (concentrations(vacId) == 0.0)
-								avVac = 0.0;
-						
-						// Get product composition
-						auto pr = this->_clusterData->getCluster(this->_products[0]);
-						
-						auto prReg = pr.getRegion();
-						Composition prComp(prReg.getOrigin());
-						
-						// Target value for the reaction to happen
-						double target = prComp[Species::V] + comp[Species::I];
-						
-						// Gaussian function around it
-						double gauss = exp(-(avVac - target) * (avVac - target) / 0.5);
-						
-						//Update rate
-						f*= gauss;
-						
-						// The large cluster concentration decreases
-						if (this->_reactants[0] >= numClusters) {
-							Kokkos::atomic_sub(
-								&values(this->_connEntries[0][0][0][0]), f * stdC);
-							Kokkos::atomic_sub(
-								&values(this->_connEntries[0][0][1][0]), f * bC);
-						}
-						else {
-							Kokkos::atomic_sub(
-								&values(this->_connEntries[1][0][1][0]), f * stdC);
-							Kokkos::atomic_sub(
-								&values(this->_connEntries[1][0][0][0]), f * bC);
-						}
-						
-						// The product concentration increases
-						if (this->_reactants[0] >= numClusters) {
-							Kokkos::atomic_add(
-								&values(this->_connEntries[2][0][0][0]), f * stdC);
-							Kokkos::atomic_add(
-								&values(this->_connEntries[2][0][1][0]), f * bC);
+				}
+				// In every case
+				
+				// The standard cluster always loses the flux
+				f = this->_coefs(0, 0, 0, 0) * rate * gauss;
+					if (this->_reactants[0] >= numClusters){
+						Kokkos::atomic_sub(
+							&values(this->_connEntries[1][0][0][0]), f * stdC);
+						Kokkos::atomic_sub(
+							&values(this->_connEntries[1][0][1][0]), f * vC);
 					}
-				}*/
+					else {
+						Kokkos::atomic_sub(
+							&values(this->_connEntries[0][0][1][0]), f * stdC);
+						Kokkos::atomic_sub(
+							&values(this->_connEntries[0][0][0][0]), f * vC);
+					}
+					
+					// The large V size decreases
+					f = this->_coefs(0, 0, 0, 0) * rate * comp[Species::I] * gauss;
+					if (this->_reactants[0] >= numClusters) {
+						Kokkos::atomic_sub(
+							&values(this->_connEntries[0][1][0][0]), f * stdC);
+						Kokkos::atomic_sub(
+							&values(this->_connEntries[0][1][1][0]), f * vC);
+					}
+					else {
+						Kokkos::atomic_sub(
+							&values(this->_connEntries[1][1][1][0]), f * stdC);
+						Kokkos::atomic_sub(
+							&values(this->_connEntries[1][1][0][0]), f * vC);
+					}
 				}
 			}
 		// Large bubble is one of the product
@@ -719,8 +774,8 @@ ZrProductionReaction::computePartialDerivatives(
 					&values(this->_connEntries[2][1][1][0]), f * cR1);
 			}
 		}
-	
-}
+	}
+
 
 KOKKOS_INLINE_FUNCTION
 double
@@ -734,6 +789,9 @@ ZrDissociationReaction::getRateForProduction(IndexType gridIndex)
 
 	double dc0 = cl0.getDiffusionCoefficient(gridIndex);
 	double dc1 = cl1.getDiffusionCoefficient(gridIndex);
+
+	std::cout<<"dissoc getRateForProduction dc0: "<< dc0 << std::endl;
+	std::cout<<"dissoc getRateForProduction dc1: "<< dc1 << std::endl;
 
 	// Determine which cluster is mobile and retrieve its anisotropy ratio
 	double p = 0;

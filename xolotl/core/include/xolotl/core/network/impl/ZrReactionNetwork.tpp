@@ -505,21 +505,18 @@ ZrReactionGenerator::addSingleSizeReactions(
 		this->addProductionReaction(tag, {i, j, vacId});
 	}
 
-
-/* we'll fix this later
 	// I_a + V -> V_b
 	if ((lo1.isOnAxis(Species::I) and lo2.isOnAxis(Species::V)) or
 		(lo1.isOnAxis(Species::V) and lo2.isOnAxis(Species::I))) {
 		// It should be around the largest size value
 		if (hi1[Species::V] + hi2[Species::V] + hi1[Species::I] +
-				hi2[Species::I] - 4 >
-			largestSize) {
+				hi2[Species::I] - 4 > largestSize) {
 			// Need to know which one is I
 			auto iId = lo1[Species::I] > 0 ? i : j;
 			auto vId = lo1[Species::I] > 0 ? j : i;
-			//			this->addProductionReaction(tag, {iId, voidId, vId});
+			this->addProductionReaction(tag, {iId, vacId, vId});
 		}
-	}*/
+	}
 }
 
 } // namespace detail
@@ -580,6 +577,9 @@ ZrClusterUpdater::updateDiffusionCoefficient(
 			// Compute the anisotropy factor
 			data.extraData.anisotropyRatio(clusterId, gridIndex) =
 				pow(Dc / Da, 1.0 / 6.0);
+			
+			std::cout<< "i"<< lo[Species::I] << "dc: "<<
+				data.diffusionCoefficient(clusterId, gridIndex) << std::endl;
 			return;
 		}
 
@@ -597,7 +597,9 @@ ZrClusterUpdater::updateDiffusionCoefficient(
 			// Compute the anisotropy factor
 			data.extraData.anisotropyRatio(clusterId, gridIndex) =
 				pow(Dc / Da, 1.0 / 6.0);
-
+			
+			std::cout<< "v"<< lo[Species::V] << "dc: "<<
+				data.diffusionCoefficient(clusterId, gridIndex) << std::endl;
 			return;
 		}
 	}

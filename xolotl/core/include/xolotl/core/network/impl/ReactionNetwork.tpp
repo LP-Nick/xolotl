@@ -1637,6 +1637,7 @@ ReactionNetwork<TImpl>::updateOutgoingDiffFluxes(double* gridPointSolution,
 			size += comp[type];
 		}
 		double coef = cluster.getDiffusionCoefficient(gridIndex);
+		std::cout<<"dc for size: "<<size<<std::endl;
 		// Compute the flux
 		double newFlux = (double)size * factor * coef * conc;
 
