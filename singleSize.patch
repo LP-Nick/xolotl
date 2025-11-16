@@ -1,0 +1,1202 @@
+diff --git a/xolotl/core/include/xolotl/core/network/IReactionNetwork.h b/xolotl/core/include/xolotl/core/network/IReactionNetwork.h
+index 62db7401..e86f852c 100644
+--- a/xolotl/core/include/xolotl/core/network/IReactionNetwork.h
++++ b/xolotl/core/include/xolotl/core/network/IReactionNetwork.h
+@@ -256,6 +256,18 @@ public:
+ 		_enableAttenuation = enable;
+ 	}
+ 
++	bool
++	getEnableLargeCluster() const noexcept
++	{
++		return _enableLargeCluster;
++	}
++
++	virtual void
++	setEnableLargeCluster(bool enable)
++	{
++		_enableLargeCluster = enable;
++	}
++
+ 	bool
+ 	getEnableConstantReaction() const noexcept
+ 	{
+@@ -683,6 +695,7 @@ protected:
+ 	bool _enableSink{};
+ 	bool _enableTrapMutation{};
+ 	bool _enableAttenuation{};
++	bool _enableLargeCluster{};
+ 	bool _enableConstantReaction{};
+ 	bool _enableReducedJacobian{};
+ 	bool _enableReadRates{};
+diff --git a/xolotl/core/include/xolotl/core/network/Reaction.h b/xolotl/core/include/xolotl/core/network/Reaction.h
+index 02311534..c3213e0b 100644
+--- a/xolotl/core/include/xolotl/core/network/Reaction.h
++++ b/xolotl/core/include/xolotl/core/network/Reaction.h
+@@ -403,10 +403,7 @@ public:
+ 	}
+ 
+ private:
+-	KOKKOS_INLINE_FUNCTION
+-	void
+-	computeCoefficients();
+-
++	
+ 	KOKKOS_INLINE_FUNCTION
+ 	double
+ 	computeRate(IndexType gridIndex, double time = 0.0);
+@@ -424,16 +421,6 @@ private:
+ 	computeRateVector(
+ 		RateConstantView toReturn, IndexType id, IndexType gridIndex);
+ 
+-	KOKKOS_INLINE_FUNCTION
+-	void
+-	computeFlux(ConcentrationsView concentrations, FluxesView fluxes,
+-		IndexType gridIndex);
+-
+-	KOKKOS_INLINE_FUNCTION
+-	void
+-	computePartialDerivatives(ConcentrationsView concentrations,
+-		Kokkos::View<double*> values, IndexType gridIndex);
+-
+ 	KOKKOS_INLINE_FUNCTION
+ 	void
+ 	computeReducedPartialDerivatives(ConcentrationsView concentrations,
+@@ -509,6 +496,20 @@ private:
+ 		OwnedSubMapView backMap, IndexType subId);
+ 
+ protected:
++	KOKKOS_INLINE_FUNCTION
++	void
++	computeCoefficients();
++
++	KOKKOS_INLINE_FUNCTION
++	void
++	computeFlux(ConcentrationsView concentrations, FluxesView fluxes,
++		IndexType gridIndex);
++	
++	KOKKOS_INLINE_FUNCTION
++	void
++	computePartialDerivatives(ConcentrationsView concentrations,
++		Kokkos::View<double*> values, IndexType gridIndex);
++	
+ 	static constexpr auto invalidIndex = Superclass::invalidIndex;
+ 	util::Array<IndexType, 2> _reactants{invalidIndex, invalidIndex};
+ 	util::Array<IndexType, 2> _products{invalidIndex, invalidIndex};
+diff --git a/xolotl/core/include/xolotl/core/network/ReactionNetwork.h b/xolotl/core/include/xolotl/core/network/ReactionNetwork.h
+index 55208619..9d9f1c60 100644
+--- a/xolotl/core/include/xolotl/core/network/ReactionNetwork.h
++++ b/xolotl/core/include/xolotl/core/network/ReactionNetwork.h
+@@ -168,6 +168,11 @@ public:
+ 	{
+ 	}
+ 
++	void
++	initializeExtraDOFs(const options::IOptions&)
++	{
++	}
++
+ 	void
+ 	updateExtraClusterData(
+ 		const std::vector<double>&, const std::vector<double>&)
+@@ -219,6 +224,9 @@ public:
+ 
+ 	void
+ 	setEnableTrapMutation(bool reaction) override;
++	
++	void
++	setEnableLargeCluster(bool reaction) override;
+ 
+ 	void
+ 	setEnableConstantReaction(bool reaction) override;
+diff --git a/xolotl/core/include/xolotl/core/network/ZrReaction.h b/xolotl/core/include/xolotl/core/network/ZrReaction.h
+index e11d0cf1..d18dca56 100644
+--- a/xolotl/core/include/xolotl/core/network/ZrReaction.h
++++ b/xolotl/core/include/xolotl/core/network/ZrReaction.h
+@@ -20,10 +20,150 @@ public:
+ 		ProductionReaction<ZrReactionNetwork, ZrProductionReaction>;
+ 
+ 	using Superclass::Superclass;
++	using NetworkType = typename Superclass::NetworkType;
++	using ReactionDataRef = typename Superclass::ReactionDataRef;
++	using ClusterData = typename Superclass::ClusterData;
++	using IndexType = typename Superclass::IndexType;
++	using Composition = typename Superclass::Composition;
++	using Region = typename Superclass::Region;
++	using ConcentrationsView = typename Superclass::ConcentrationsView;
++	using FluxesView = typename Superclass::FluxesView;
++	using Species = typename Superclass::Species;
++	
++	KOKKOS_INLINE_FUNCTION
++	ZrProductionReaction(ReactionDataRef reactionData,
++		const ClusterData& clusterData, IndexType reactionId,
++		IndexType cluster0, IndexType cluster1,
++		IndexType cluster2 = Superclass::invalidIndex,
++		IndexType cluster3 = Superclass::invalidIndex)
++		
++	{
++		this->_clusterData = &clusterData;
++		this->_reactionId = reactionId;
++		this->_rate = reactionData.getRates(reactionId);
++		this->_widths = reactionData.getWidths(reactionId);
++		this->_coefs = reactionData.getCoefficients(reactionId);
++
++		this->_reactants = {cluster0, cluster1};
++		this->_products = {cluster2, cluster3};
++		
++		auto numClusters = clusterData.numClusters;
++		// Check if the single size is involved
++		if (cluster0 >= numClusters)
++			isLargeClusterReaction = true;
++		if (cluster1 >= numClusters)
++			isLargeClusterReaction = true;
++		if (cluster2 != Superclass::invalidIndex and cluster2 >= numClusters)
++			isLargeClusterReaction = true;
++		if (cluster3 != Superclass::invalidIndex and cluster3 >= numClusters)
++			isLargeClusterReaction = true;
++		
++		//static
++		const auto dummyRegion = Region(Composition{});
++		
++		for (auto i : {0,1}){
++			if (this->_reactants[i] < numClusters){
++				this-> copyMomentIds(this->_reactants[i], this->_reactantMomentIds[i]);
++			}
++			else{
++				auto shift = (this->_reactants[i] - numClusters)/2;
++				switch (shift) {
++				// Vac
++				case 0:
++					this->_reactantMomentIds[i][0] =
++						this->_clusterData->vacAvId();
++				// Int
++				case 1:
++					this->_reactantMomentIds[i][0] =
++						this->_clusterData->intAvId();
++				// Basal
++				case 2:
++					this->_reactantMomentIds[i][0] =
++						this->_clusterData->basalAvId();
++				}
++			}
++			if (this->_products[i] < numClusters){
++				this->copyMomentIds(this->_products[i], this->_productMomentIds[i]);
++			}
++			else {
++				if (this->_products[i] == Superclass::invalidIndex) {
++					for (IndexType j = 0; j < Superclass::nMomentIds; ++j) {
++						this->_productMomentIds[i][j] = Superclass::invalidIndex;
++					}
++				}
++				else {
++					auto shift = (this->_products[i] - numClusters)/2;
++					switch (shift) {
++					// Vac
++					case 0:
++						this->_productMomentIds[i][0] =
++							this->_clusterData->vacAvId();
++					// Int
++					case 1:
++						this->_productMomentIds[i][0] =
++							this->_clusterData->intAvId();
++					// Basal
++					case 2:
++						this->_productMomentIds[i][0] =
++							this->_clusterData->basalAvId();
++					}
++				}
++			}
++		}
++		
++		const auto& cl1Reg = (this->_reactants[0] < numClusters) ?
++			this->_clusterData->getCluster(this->_reactants[0]).getRegion() :
++			dummyRegion;
++		const auto& cl2Reg = (this->_reactants[1] < numClusters) ?
++			this->_clusterData->getCluster(this->_reactants[1]).getRegion() :
++			dummyRegion;
++		const auto& pr1Reg = (this->_products[0] == Superclass::invalidIndex) ?
++			dummyRegion :
++			(this->_products[0] < numClusters) ?
++			this->_clusterData->getCluster(this->_products[0]).getRegion() :
++			dummyRegion;
++		const auto& pr2Reg = (this->_products[1] == Superclass::invalidIndex) ?
++			dummyRegion :
++			(this->_products[1] < numClusters) ?
++			this->_clusterData->getCluster(this->_products[1]).getRegion() :
++			dummyRegion;
++
++		this->_reactantVolumes = {cl1Reg.volume(), cl2Reg.volume()};
++		this->_productVolumes = {pr1Reg.volume(), pr2Reg.volume()};
+ 
++		this->initialize();
++	}
++	
++	KOKKOS_INLINE_FUNCTION
++	ZrProductionReaction(ReactionDataRef reactionData,
++		const ClusterData& clusterData, IndexType reactionId,
++		const detail::ClusterSet& clusterSet) :
++		AlloyProductionReaction(reactionData, clusterData, reactionId,
++			clusterSet.cluster0, clusterSet.cluster1, clusterSet.cluster2,
++			clusterSet.cluster3)
++	{
++	}
++		
+ 	KOKKOS_INLINE_FUNCTION
+ 	double
+ 	getRateForProduction(IndexType gridIndex);
++	
++	KOKKOS_INLINE_FUNCTION
++	void
++	computeCoefficients();
++
++	KOKKOS_INLINE_FUNCTION
++	void
++	computeFlux(ConcentrationsView concentrations, FluxesView fluxes,
++		IndexType gridIndex);
++
++	KOKKOS_INLINE_FUNCTION
++	void
++	computePartialDerivatives(ConcentrationsView concentrations,
++		Kokkos::View<double*> values, IndexType gridIndex);
++
++private:
++	bool isLargeClusterReaction = false;
+ };
+ 
+ class ZrDissociationReaction :
+diff --git a/xolotl/core/include/xolotl/core/network/ZrReactionNetwork.h b/xolotl/core/include/xolotl/core/network/ZrReactionNetwork.h
+index 860c1d94..836a6f8f 100644
+--- a/xolotl/core/include/xolotl/core/network/ZrReactionNetwork.h
++++ b/xolotl/core/include/xolotl/core/network/ZrReactionNetwork.h
+@@ -38,7 +38,13 @@ public:
+ 
+ 	IndexType
+ 	checkLargestClusterId();
+-
++	
++	IndexType
++	getLargestClusterId()
++	{
++		return largestClusterId;
++	}
++	
+ 	void
+ 	setConstantRates(RatesView rates, IndexType gridIndex) override;
+ 
+@@ -107,6 +113,37 @@ public:
+ 	void
+ 	writeRxnDataLine(const std::vector<std::vector<double>>& localData,
+ 		double time) override;
++		
++	void
++	initializeExtraDOFs(const options::IOptions& options);
++
++	void
++	computeFluxesPreProcess(ConcentrationsView concentrations,
++		FluxesView fluxes, IndexType gridIndex, double surfaceDepth,
++		double spacing);
++
++	void
++	computePartialsPreProcess(ConcentrationsView concentrations,
++		Kokkos::View<double*> values, IndexType gridIndex, double surfaceDepth,
++		double spacing);
++
++protected:
++	double
++	computeClusterRadius(double vAmount, int species)
++	{
++		if (species == 0){
++			//Vac case
++			return (vAmount+1)**(1/2) * pow(3.23*5.17/(2* ::xolotl::core::pi), 1.0/2.0) * 1.118 / 10
++		}
++		if (species == 1){
++			//Int case
++			return (vAmount+1)**(1/2) * pow(3.23*5.17/(2* ::xolotl::core::pi), 1.0/2.0) * 1.026 / 10
++		}
++		if (species == 0){
++			//Basal case
++			return (vAmount+1)**(1/2) * 3.23 * pow(pow(3, 1/2)/(2* ::xolotl::core::pi), 1.0/2.0) / 10
++		}
++	}
+ 
+ private:
+ 	double
+@@ -157,6 +194,12 @@ public:
+ 
+ 	using Superclass::Superclass;
+ 
++	ZrReactionGenerator(const ZrReactionNetwork& network) :
++		Superclass(network),
++		largestClusterId(network.largestClusterId)
++		{
++		}
++
+ 	template <typename TTag>
+ 	KOKKOS_INLINE_FUNCTION
+ 	void
+@@ -166,10 +209,18 @@ public:
+ 	KOKKOS_INLINE_FUNCTION
+ 	void
+ 	addSinks(IndexType i, TTag tag) const;
++	
++	template <typename TTag>
++	
++	KOKKOS_INLINE_FUNCTION
++	void
++	addSingleSizeReactions(IndexType i, IndexType j, TTag tag) const;
+ 
+ private:
+ 	ReactionCollection<Network>
+ 	getReactionCollection() const;
++	
++	IndexType largestClusterId;
+ };
+ 
+ class ZrClusterUpdater
+diff --git a/xolotl/core/include/xolotl/core/network/detail/ClusterData.h b/xolotl/core/include/xolotl/core/network/detail/ClusterData.h
+index 26e98fc4..ee1ff9e1 100644
+--- a/xolotl/core/include/xolotl/core/network/detail/ClusterData.h
++++ b/xolotl/core/include/xolotl/core/network/detail/ClusterData.h
+@@ -145,6 +145,9 @@ private:
+ 		LATTICE_PARAM,
+ 		FISSION_RATE,
+ 		ZETA,
++		AV_VAC_RAD,
++		AV_INT_RAD,
++		AV_BASAL_RAD,
+ 		DISLOCATION_DENSITY,
+ 		I_FORMATION,
+ 		XE_FORMATION,
+@@ -156,6 +159,12 @@ private:
+ 	enum IntValsIndex : int
+ 	{
+ 		TRANSITION_SIZE = 0,
++		VAC_ID,
++		INT_ID,
++		BASAL_ID,
++		AV_VAC_ID,
++		AV_INT_ID,
++		AV_BASAL_ID,
+ 		NUM_INT_VALS
+ 	};
+ 
+@@ -167,6 +176,7 @@ private:
+ 		SINK,
+ 		TRAP_MUTATION,
+ 		READ_RATES,
++		LARGE_CLUSTER,
+ 		CONSTANT_REACTION,
+ 		NUM_BOOL_VALS
+ 	};
+@@ -234,6 +244,45 @@ public:
+ 		setVal(_floatVals, ZETA, val);
+ 	}
+ 
++	KOKKOS_INLINE_FUNCTION
++	double
++	vacAvRad() const
++	{
++		return _floatVals[AV_VAC_RAD];
++	}
++
++	void
++	setVacAvRad(double val)
++	{
++		setVal(_floatVals, AV_VAC_RAD, val);
++	}
++
++	KOKKOS_INLINE_FUNCTION
++	double
++	intAvRad() const
++	{
++		return _floatVals[AV_INT_RAD];
++	}
++
++	void
++	setIntAvRad(double val)
++	{
++		setVal(_floatVals, AV_INT_RAD, val);
++	}
++
++	KOKKOS_INLINE_FUNCTION
++	double
++	basalAvRad() const
++	{
++		return _floatVals[AV_BASAL_RAD];
++	}
++
++	void
++	setBasalAvRad(double val)
++	{
++		setVal(_floatVals, AV_BASAL_RAD, val);
++	}
++
+ 	KOKKOS_INLINE_FUNCTION
+ 	double
+ 	getIFormationEnergy() const
+@@ -311,6 +360,84 @@ public:
+ 		setVal(_floatVals, DISLOCATION_DENSITY, val);
+ 	}
+ 
++	KOKKOS_INLINE_FUNCTION
++	int
++	vacId() const
++	{
++		return _intVals[VAC_ID];
++	}
++
++	void
++	setVacId(int val)
++	{
++		setVal(_intVals, VAC_ID, val);
++	}
++
++	KOKKOS_INLINE_FUNCTION
++	int
++	intId() const
++	{
++		return _intVals[INT_ID];
++	}
++
++	void
++	setIntId(int val)
++	{
++		setVal(_intVals, INT_ID, val);
++	}
++
++	KOKKOS_INLINE_FUNCTION
++	int
++	basalId() const
++	{
++		return _intVals[BASAL_ID];
++	}
++
++	void
++	setBasalId(int val)
++	{
++		setVal(_intVals, BASAL_ID, val);
++	}
++
++	KOKKOS_INLINE_FUNCTION
++	int
++	vacAvId() const
++	{
++		return _intVals[AV_VAC_ID];
++	}
++
++	void
++	setVacAvId(int val)
++	{
++		setVal(_intVals, AV_VAC_ID, val);
++	}
++
++	KOKKOS_INLINE_FUNCTION
++	int
++	intAvId() const
++	{
++		return _intVals[AV_INT_ID];
++	}
++
++	void
++	setIntAvId(int val)
++	{
++		setVal(_intVals, AV_INT_ID, val);
++	}
++
++	KOKKOS_INLINE_FUNCTION
++	int
++	basalAvId() const
++	{
++		return _intVals[AV_BASAL_ID];
++	}
++
++	void
++	setBasalAvId(int val)
++	{
++		setVal(_intVals, AV_BASAL_ID, val);
++	}
++
+ 	KOKKOS_INLINE_FUNCTION
+ 	bool
+ 	enableStdReaction() const
+@@ -402,6 +529,19 @@ public:
+ 		setVal(_boolVals, CONSTANT_REACTION, val);
+ 	}
+ 
++	KOKKOS_INLINE_FUNCTION
++	bool
++	enableLargeCluster() const
++	{
++		return _boolVals[LARGE_CLUSTER];
++	}
++
++	void
++	setEnableLargeCluster(bool val)
++	{
++		setVal(_boolVals, LARGE_CLUSTER, val);
++	}
++
+ private:
+ 	View<double[NUM_FLOAT_VALS]> _floatVals;
+ 	View<int[NUM_INT_VALS]> _intVals;
+diff --git a/xolotl/core/include/xolotl/core/network/impl/ReactionNetwork.tpp b/xolotl/core/include/xolotl/core/network/impl/ReactionNetwork.tpp
+index d48b2124..c6f1856f 100644
+--- a/xolotl/core/include/xolotl/core/network/impl/ReactionNetwork.tpp
++++ b/xolotl/core/include/xolotl/core/network/impl/ReactionNetwork.tpp
+@@ -60,6 +60,7 @@ ReactionNetwork<TImpl>::ReactionNetwork(const Subpaving& subpaving,
+ 	this->setEnableSink(map["sink"]);
+ 	this->setEnableTrapMutation(map["modifiedTM"]);
+ 	this->setEnableAttenuation(map["attenuation"]);
++	this->setEnableLargeCluster(map["largeCluster"]);
+ 	this->setEnableConstantReaction(map["constant"]);
+ 	std::string petscString = opts.getPetscArg();
+ 	auto tokens = util::Tokenizer<>{petscString}();
+@@ -262,6 +263,14 @@ ReactionNetwork<TImpl>::setEnableReadRates(bool read)
+ 	_clusterData.h_view().setEnableReadRates(this->_enableReadRates);
+ }
+ 
++template <typename TImpl>
++void
++ReactionNetwork<TImpl>::setEnableLargeCluster(bool reaction)
++{
++	this->_enableLargeCluster = reaction;
++	_clusterData.h_view().setEnableLargeCluster(this->_enableLargeCluster);
++}
++
+ template <typename TImpl>
+ void
+ ReactionNetwork<TImpl>::setGridSize(IndexType gridSize)
+diff --git a/xolotl/core/include/xolotl/core/network/impl/ZrReaction.tpp b/xolotl/core/include/xolotl/core/network/impl/ZrReaction.tpp
+index 2123c91c..c32c9c8b 100644
+--- a/xolotl/core/include/xolotl/core/network/impl/ZrReaction.tpp
++++ b/xolotl/core/include/xolotl/core/network/impl/ZrReaction.tpp
+@@ -119,96 +119,425 @@ ZrProductionReaction::getRateForProduction(IndexType gridIndex)
+ {
+ 	auto cl0 = this->_clusterData->getCluster(_reactants[0]);
+ 	auto cl1 = this->_clusterData->getCluster(_reactants[1]);
+-
+-	auto cl0Reg = cl0.getRegion();
+-	auto cl1Reg = cl1.getRegion();
+-	Composition lo0 = cl0Reg.getOrigin();
+-	Composition lo1 = cl1Reg.getOrigin();
+-
+-	double r0 = cl0.getReactionRadius();
+-	double r1 = cl1.getReactionRadius();
+-
+-	double dc0 = cl0.getDiffusionCoefficient(gridIndex);
+-	double dc1 = cl1.getDiffusionCoefficient(gridIndex);
+-
+-	// Determine which cluster is mobile and retrieve its anisotropy ratio
+-	double p = 0;
+-	if (dc0 > 0)
+-		p = this->_clusterData->extraData.anisotropyRatio(
+-			_reactants[0], gridIndex);
+-	else if (dc1 > 0)
+-		p = this->_clusterData->extraData.anisotropyRatio(
+-			_reactants[1], gridIndex);
+-
++	
+ 	// Create an array with all possible dislocation capture radii
+ 	// rdCl = {(rdI for cl0, rdV for cl0), (rdI for cl1, rdV for cl1)}
+ 	double rdCl[2][2] = {{0.0, 0.0}, {0.0, 0.0}};
+-	rdCl[0][0] = this->_clusterData->extraData.dislocationCaptureRadius(
+-		_reactants[0], 0);
+-	rdCl[0][1] = this->_clusterData->extraData.dislocationCaptureRadius(
+-		_reactants[0], 1);
+-	rdCl[1][0] = this->_clusterData->extraData.dislocationCaptureRadius(
+-		_reactants[1], 0);
+-	rdCl[1][1] = this->_clusterData->extraData.dislocationCaptureRadius(
+-		_reactants[1], 1);
+ 	
+-	/*
+-	//std::cout<<"reaction between ";
+-	//print capture radii cluster 0
+-	if(lo0.isOnAxis(Species::Basal)){
+-				 auto size = lo0[Species::Basal];
+-				 std::cout << "basal capture radii for size " << size <<std::endl;
+-				 std::cout << "int capture: " << rdCl[0][0] <<std::endl;
+-				 std::cout << "vac capture: " << rdCl[0][1] <<std::endl;
+-				 //std::cout<<"basal "<<size<<" and";
++	if (not isLargeClusterReaction){
++		
++		double r0 = cl0.getReactionRadius();
++		double r1 = cl1.getReactionRadius();
++
++		double dc0 = cl0.getDiffusionCoefficient(gridIndex);
++		double dc1 = cl1.getDiffusionCoefficient(gridIndex);
++
++		// Determine which cluster is mobile and retrieve its anisotropy ratio
++		double p = 0;
++		if (dc0 > 0)
++			p = this->_clusterData->extraData.anisotropyRatio(
++				_reactants[0], gridIndex);
++		else if (dc1 > 0)
++			p = this->_clusterData->extraData.anisotropyRatio(
++				_reactants[1], gridIndex);
++
++		
++		rdCl[0][0] = this->_clusterData->extraData.dislocationCaptureRadius(
++			_reactants[0], 0);
++		rdCl[0][1] = this->_clusterData->extraData.dislocationCaptureRadius(
++			_reactants[0], 1);
++		rdCl[1][0] = this->_clusterData->extraData.dislocationCaptureRadius(
++			_reactants[1], 0);
++		rdCl[1][1] = this->_clusterData->extraData.dislocationCaptureRadius(
++			_reactants[1], 1);
++		
++					 
++
++		
++		return zr::getRate(cl0.getRegion(), cl1.getRegion(), r0, r1, dc0, dc1, rdCl,
++			p, this->_clusterData->transitionSize());
+ 	}
+-	else if(lo0.isOnAxis(Species::V)){
+-				 auto size = lo0[Species::V];
+-				 std::cout << "vacancy capture radii for size " << size <<std::endl;
+-				 std::cout << "int capture: " << rdCl[0][0] <<std::endl;
+-				 std::cout << "vac capture: " << rdCl[0][1] <<std::endl;
+-				 //std::cout<<"vac "<<size<<" and";
++	// Large Cluster Case (vac only right now)
++	const auto dummyRegion = Region(Composition{});
++	
++	double r0 = 0.0, r1 = 0.0, dc0 = 0.0, dc1 = 0.0;
++	Region cl0Reg = dummyRegion, cl1Reg = dummyRegion;
++	auto numClusters = this->_clusterData->numClusters;
++	
++	if (this->_reactants[0] >= numClusters){
++		auto shift = (this->_reactants[0] - numClusters)/2;
++		switch (shift) {
++		// Vac
++		case 0:
++			r0 = this->_clusterData->vacAvRad();
++			cl0Reg[Species::V] = {1, 2};
++		// Int
++		case 1:
++			r0 = this->_clusterData->intAvRad();
++			cl0Reg[Species::I] = {1, 2};
++		// Basal
++		case 2:
++			r0 = this->_clusterData->basalAvRad();
++			cl0Reg[Species::Basal] = {1, 2};
++		}
+ 	}
+-	else if(lo0.isOnAxis(Species::I)){
+-				 auto size = lo0[Species::I];
+-				 std::cout << "interstitial capture radii for size " << size <<std::endl;
+-				 std::cout << "int capture: " << rdCl[0][0] <<std::endl;
+-				 std::cout << "vac capture: " << rdCl[0][1] <<std::endl;
+-				 //std::cout<<"int "<<size<<" and ";
++	else {
++		auto cl0 = this->_clusterData->getCluster(_reactants[0]);
++		double r0 = cl0.getReactionRadius();
++		double dc0 = cl0.getDiffusionCoefficient(gridIndex);
++		//anisotropy ratio
++		double p = 0;
++		if (dc0 > 0)
++			p = this->_clusterData->extraData.anisotropyRatio(
++				_reactants[0], gridIndex);
++		cl0Reg = cl0.getRegion();
++		rdCl[0][0] = this->_clusterData->extraData.dislocationCaptureRadius(
++			_reactants[0], 0);
++		rdCl[0][1] = this->_clusterData->extraData.dislocationCaptureRadius(
++			_reactants[0], 1);
+ 	}
+-	//print capture radii cluster 1
+-	if(lo1.isOnAxis(Species::Basal)){
+-				 auto size = lo1[Species::Basal];
+-				 std::cout << "basal capture radii for size " << size <<std::endl;
+-				 std::cout << "int capture: " << rdCl[1][0] <<std::endl;
+-				 std::cout << "vac capture: " << rdCl[1][1] <<std::endl;
+-				 //std::cout<<"basal "<<size<<std::endl;
++	
++	if (this->_reactants[1] >= numClusters){
++		auto shift = (this->_reactants[1] - numClusters)/2;
++		switch (shift) {
++		// Vac
++		case 0:
++			r1 = this->_clusterData->vacAvRad();
++			cl1Reg[Species::V] = {1, 2};
++		// Int
++		case 1:
++			r1 = this->_clusterData->intAvRad();
++			cl1Reg[Species::I] = {1, 2};
++		// Basal
++		case 2:
++			r1 = this->_clusterData->basalAvRad();
++			cl1Reg[Species::Basal] = {1, 2};
++		}
++	}
++	
++	else {
++		auto cl1 = this->_clusterData->getCluster(_reactants[1]);
++		double r1 = cl1.getReactionRadius();
++		double dc1 = cl1.getDiffusionCoefficient(gridIndex);
++		//anisotropy ratio
++		double p = 0;
++		if (dc1 > 0)
++			p = this->_clusterData->extraData.anisotropyRatio(
++				_reactants[1], gridIndex);
++		cl1Reg = cl1.getRegion();
++		rdCl[1][0] = this->_clusterData->extraData.dislocationCaptureRadius(
++			_reactants[1], 0);
++		rdCl[1][1] = this->_clusterData->extraData.dislocationCaptureRadius(
++			_reactants[1], 1);
++	}
++	
++	return zr::getRate(cl0.Reg, cl1.Reg, r0, r1, dc0, dc1, rdCl,
++			p, this->_clusterData->transitionSize());
++}
++
++KOKKOS_INLINE_FUNCTION
++void
++ZrProductionReaction::computeCoefficients()
++{
++	// Check if the large cluster is involved
++	if (isLargeClusterReaction) {
++		constexpr auto speciesRangeNoI = NetworkType::getSpeciesRangeNoI();
++		for (auto i : speciesRangeNoI) {
++			this->_widths(i()) = 1.0;
++		}
++		this->_coefs(0, 0, 0, 0) = 1.0;
+ 	}
+-	else if(lo1.isOnAxis(Species::V)){
+-				 auto size = lo1[Species::V];
+-				 std::cout << "vacancy capture radii for size " << size <<std::endl;
+-				 std::cout << "int capture: " << rdCl[1][0] <<std::endl;
+-				 std::cout << "vac capture: " << rdCl[1][1] <<std::endl;
+-				 //std::cout<<"vac "<<size<<std::endl;
++	else {
++		// Standard case
++		Superclass::computeCoefficients();
+ 	}
+-	else if(lo1.isOnAxis(Species::I)){
+-				 auto size = lo1[Species::I];
+-				 std::cout << "interstitial capture radii for size " << size <<std::endl;
+-				 std::cout << "int capture: " << rdCl[1][0] <<std::endl;
+-				 std::cout << "vac capture: " << rdCl[1][1] <<std::endl;
+-				 //std::cout<<"int "<<size<<std::endl;
++}
++
++KOKKOS_INLINE_FUNCTION
++void
++ZrProductionReaction::computeFlux(
++	ConcentrationsView concentrations, FluxesView fluxes, IndexType gridIndex)
++{
++	// Standard case
++	if (not isLargeClusterReaction) {
++		return Superclass::computeFlux(concentrations, fluxes, gridIndex);
+ 	}
+-	/*std::cout<<"r0: "<<r0<<std::endl;
+-	std::cout<<"r1: "<<r1<<std::endl;
+-	std::cout<<"dc0: "<<dc0<<std::endl;
+-	std::cout<<"dc1: "<<dc1<<std::endl;
+-	std::cout<<"rate: "<<zr::getRate(cl0.getRegion(), cl1.getRegion(), r0, r1, dc0, dc1, rdCl,
+-				 p, this->_clusterData->transitionSize()) <<std::endl;*/
+-       
+ 
++	// The rate need to be computed each time because it depends on the current
++	// large cluster size
++	auto rate = getRateForProduction(gridIndex);
++
++	constexpr auto speciesRangeNoI = NetworkType::getSpeciesRangeNoI();
++	auto numClusters = this->_clusterData->numClusters;
++	auto vacId = this->_clusterData->vacId();
++	auto intId = this->_clusterData->intId();
++	auto basalId = this->_clusterData->basalId();
+ 	
+-	return zr::getRate(cl0.getRegion(), cl1.getRegion(), r0, r1, dc0, dc1, rdCl,
+-		p, this->_clusterData->transitionSize());
++	// Large vacancy cluster is one of the reactants
++	if ((this->_reactants[0] - numClusters)/2 == 0 or
++			(this->_reactants[1] - numClusters)/2 == 0) {
++				// Get standard cluster
++				auto stdClusterId = (this->_reactants[0] >= numClusters) ?
++					this->_reactants[1]:
++					this->_reactants[0];
++				auto cl = this->_clusterData->getCluster(stdClusterId);
++				auto clReg = cl.getRegion();
++				auto orig = clReg.getOrigin();
++				Composition comp(orig);
++				
++				// Vacancy Standard Cluster Case
++				if (comp[Species::V] > 0){
++					//Compute flux
++					double f = this->coefs(0, 0, 0, 0) * concentrations(stdClusterId)
++						* concentrations(vacId) * rate;
++					// The standard cluster always loses the flux
++					Kokkos::atomic_sub(&fluxes[stdClusterId], f);
++					
++					// The Large V size increases
++					Kokkos::atomic_add(&fluxes[this->_clusterData->vacAvId()], f * comp[Species::V]);
++				}
++				
++				// Interstitial Standard Cluster Case
++				if (comp[Species::I] > 0){
++					//Compute flux
++					double f = this->coefs(0, 0, 0, 0) * concentrations(stdClusterId)
++						* concentrations(vacId) * rate;
++					// The standard cluster always loses the flux
++					Kokkos::atomic_sub(&fluxes[stdClusterId], f);
++					
++					// The large V size decreases
++					Kokkos::atomic_sub(&fluxes[this->_clusterData->vacAvId()], f * comp[Species::I]);
++					
++					// Special case where the product is not the single size
++					if (this->_products[0] < numClusters){
++						// Only if large vacancy cluster has a specific size
++						auto avVac = concentrations(this->_clusterData->vacAvId()) / concentrations(vacId);
++						if (concentrations(vacId) == 0.0)
++								avVac = 0.0;
++						
++						// Get product composition
++						auto pr = this->_clusterData->getCluster(this->_products[0]);
++						
++						auto prReg = pr.getRegion();
++						Composition prComp(prReg.getOrigin());
++						
++						// Target value for the reaction to happen
++						double target = prComp[Species::V] + comp[Species::I];
++						
++						// Gaussian function around it
++						double gauss = exp(-(avVac - target) * (avVac - target) / 0.5);
++						
++						// The large cluster concentration decreases
++						Kokkos::atomic_sub(&fluxes[vacId], f * gauss);
++						// The product concentration increases
++						Kokkos::atomic_add(&fluxes[this->_products[0]], f * gauss);
++					}
++				}
++			}
++			
++	// Large interstitial cluster is one of the reactants
++	else if ((this->_reactants[0] - numClusters)/2 == 1 or
++			(this->_reactants[1] - numClusters)/2 == 1) {
++				// Get standard cluster
++				auto stdClusterId = (this->_reactants[0] >= numClusters) ?
++					this->_reactants[1]:
++					this->_reactants[0];
++				auto cl = this->_clusterData->getCluster(stdClusterId);
++				auto clReg = cl.getRegion();
++				auto orig = clReg.getOrigin();
++				Composition comp(orig);
++				
++				// Interstitial Standard Cluster Case
++				if (comp[Species::I] > 0){
++					//Compute flux
++					double f = this->coefs(0, 0, 0, 0) * concentrations(stdClusterId)
++						* concentrations(intId) * rate;
++					// The standard cluster always loses the flux
++					Kokkos::atomic_sub(&fluxes[stdClusterId], f);
++					
++					// The Large I size increases
++					Kokkos::atomic_add(&fluxes[this->_clusterData->intAvId()], f * comp[Species::I]);
++				}
++				
++				// Vacancy Standard Cluster Case
++				if (comp[Species::V] > 0){
++					//Compute flux
++					double f = this->coefs(0, 0, 0, 0) * concentrations(stdClusterId)
++						* concentrations(intId) * rate;
++					// The standard cluster always loses the flux
++					Kokkos::atomic_sub(&fluxes[stdClusterId], f);
++					
++					// The large I size decreases
++					Kokkos::atomic_sub(&fluxes[this->_clusterData->intAvId()], f * comp[Species::V]);
++					
++					// Special case where the product is not the single size
++					if (this->_products[0] < numClusters){
++						// Only if large interstitial cluster has a specific size
++						auto avInt = concentrations(this->_clusterData->intAvId()) / concentrations(intId);
++						if (concentrations(intId) == 0.0)
++								avInt = 0.0;
++						
++						// Get product composition
++						auto pr = this->_clusterData->getCluster(this->_products[0]);
++						
++						auto prReg = pr.getRegion();
++						Composition prComp(prReg.getOrigin());
++						
++						// Target value for the reaction to happen
++						double target = prComp[Species::I] + comp[Species::V];
++						
++						// Gaussian function around it
++						double gauss = exp(-(avInt - target) * (avInt - target) / 0.5);
++						
++						// The large cluster concentration decreases
++						Kokkos::atomic_sub(&fluxes[intId], f * gauss);
++						// The product concentration increases
++						Kokkos::atomic_add(&fluxes[this->_products[0]], f * gauss);
++					}
++				}
++			}
++	
++	// Large basal cluster is one of the reactants
++	else if ((this->_reactants[0] - numClusters)/2 == 2 or
++			(this->_reactants[1] - numClusters)/2 == 2) {
++				// Get standard cluster
++				auto stdClusterId = (this->_reactants[0] >= numClusters) ?
++					this->_reactants[1]:
++					this->_reactants[0];
++				auto cl = this->_clusterData->getCluster(stdClusterId);
++				auto clReg = cl.getRegion();
++				auto orig = clReg.getOrigin();
++				Composition comp(orig);
++				
++				// Vacancy Standard Cluster Case
++				if (comp[Species::V] > 0){
++					//Compute flux
++					double f = this->coefs(0, 0, 0, 0) * concentrations(stdClusterId)
++						* concentrations(basalId) * rate;
++					// The standard cluster always loses the flux
++					Kokkos::atomic_sub(&fluxes[stdClusterId], f);
++					
++					// The Large Basal size increases
++					Kokkos::atomic_add(&fluxes[this->_clusterData->basalAvId()], f * comp[Species::V]);
++				}
++				
++				// Interstitial Standard Cluster Case
++				if (comp[Species::I] > 0){
++					//Compute flux
++					double f = this->coefs(0, 0, 0, 0) * concentrations(stdClusterId)
++						* concentrations(basalId) * rate;
++					// The standard cluster always loses the flux
++					Kokkos::atomic_sub(&fluxes[stdClusterId], f);
++					
++					// The large Basal size decreases
++					Kokkos::atomic_sub(&fluxes[this->_clusterData->basalAvId()], f * comp[Species::I]);
++					
++					// Special case where the product is not the single size
++					if (this->_products[0] < numClusters){
++						// Only if large basal cluster has a specific size
++						auto avBasal = concentrations(this->_clusterData->basalAvId()) / concentrations(basalId);
++						if (concentrations(basalId) == 0.0)
++								avBasal = 0.0;
++						
++						// Get product composition
++						auto pr = this->_clusterData->getCluster(this->_products[0]);
++						
++						auto prReg = pr.getRegion();
++						Composition prComp(prReg.getOrigin());
++						
++						// Target value for the reaction to happen
++						double target = prComp[Species::Basal] + comp[Species::I];
++						
++						// Gaussian function around it
++						double gauss = exp(-(avBasal - target) * (avBasal - target) / 0.5);
++						
++						// The large cluster concentration decreases
++						Kokkos::atomic_sub(&fluxes[basalId], f * gauss);
++						// The product concentration increases
++						Kokkos::atomic_add(&fluxes[this->_products[0]], f * gauss);
++					}
++				}
++			}
++	
++			// Large cluster is only a product
++			else {
++				auto cR1 = concentrations[this->_reactants[0]];
++				auto cR2 = concentrations[this->_reactants[1]];
++				auto cl1 = this->_clusterData->getCluster(this->_reactants[0]);
++				auto cl1Reg = cl1.getRegion();
++				auto orig1 = cl1Reg.getOrigin();
++				Composition comp1(orig1);
++				auto cl2 = this->_clusterData->getCluster(this->_reactants[1]);
++				auto cl2Reg = cl2.getRegion();
++				auto orig2 = cl2Reg.getOrigin();
++				Composition comp2(orig2);
++				
++				double f = this->_coefs(0, 0, 0, 0) * cR1 * cR2 * rate;
++				
++				// Vacancy case
++				if ((this->_products[0] - numClusters)/2 == 0 or
++					(this->_products[1] - numClusters)/2 == 0){
++					// Both reactants decrease
++					Kokkos::atomic_sub(&fluxes[this->_reactants[0]], f);
++					Kokkos::atomic_sub(&fluxes[this->_reactants[1]], f);
++					// The large V cluster increases, as well as average V
++					Kokkos::atomic_add(&fluxes[vacId], f);
++					Kokkos::atomic_add(&fluxes[this->_clusterData->vacAvId()],
++						f * (comp1[Species::V] + comp2[Species::V]));
++				}
++				
++				// Interstitial case
++				if ((this->_products[0] - numClusters)/2 == 1 or
++					(this->_products[1] - numClusters)/2 == 1){
++					// Both reactants decrease
++					Kokkos::atomic_sub(&fluxes[this->_reactants[0]], f);
++					Kokkos::atomic_sub(&fluxes[this->_reactants[1]], f);
++					// The large I cluster increases, as well as average I
++					Kokkos::atomic_add(&fluxes[intId], f);
++					Kokkos::atomic_add(&fluxes[this->_clusterData->intAvId()],
++						f * (comp1[Species::I] + comp2[Species::I]));
++				}
++				
++				// Basal case
++				if ((this->_products[0] - numClusters)/2 == 2 or
++					(this->_products[1] - numClusters)/2 == 2){
++					// Both reactants decrease
++					Kokkos::atomic_sub(&fluxes[this->_reactants[0]], f);
++					Kokkos::atomic_sub(&fluxes[this->_reactants[1]], f);
++					// The large Basal cluster increases, as well as average Basal
++					Kokkos::atomic_add(&fluxes[basalId], f);
++					if (comp1[Species::V] > 0){ // large basal cluster comes from V + B
++					Kokkos::atomic_add(&fluxes[this->_clusterData->basalAvId()],
++						f * (comp1[Species::V] + comp2[Species::Basal]));
++					}
++					if (comp2[Species::V] > 0){
++					Kokkos::atomic_add(&fluxes[this->_clusterData->basalAvId()],
++						f * (comp1[Species::Basal] + comp2[Species::V]));
++					}
++				}
++			}
++}
++
++KOKKOS_INLINE_FUNCTION
++void
++ZrProductionReaction::computePartialDerivatives(
++	ConcentrationsView concentrations, Kokkos::View<double*> values,
++	IndexType gridIndex)
++{
++	// Standard case
++	if (not isLargeClusterReaction) {
++		return Superclass::computePartialDerivatives(
++			concentrations, values, gridIndex);
++	}
++
++	// The rate need to be computed each time because it depends on the current
++	// large cluster size
++	auto rate = getRateForProduction(gridIndex);
++
++	constexpr auto speciesRangeNoI = NetworkType::getSpeciesRangeNoI();
++	//	auto largeBubbleId = this->_clusterData->bubbleId();
++
++	//TODO
+ }
+ 
+ KOKKOS_INLINE_FUNCTION
+diff --git a/xolotl/core/include/xolotl/core/network/impl/ZrReactionNetwork.tpp b/xolotl/core/include/xolotl/core/network/impl/ZrReactionNetwork.tpp
+index 7ed4d0e1..d3b5af4a 100644
+--- a/xolotl/core/include/xolotl/core/network/impl/ZrReactionNetwork.tpp
++++ b/xolotl/core/include/xolotl/core/network/impl/ZrReactionNetwork.tpp
+@@ -12,6 +12,109 @@ namespace core
+ {
+ namespace network
+ {
++
++void
++ZrReactionNetwork::initializeExtraDOFs(const options::IOptions& options)
++{
++	auto map = options.getProcesses();
++	if (not map["largeCluster"])
++		return;
++
++	this->_clusterData.h_view().setVacId(this->_numDOFs);
++	this->_clusterData.h_view().setVacAvId(this->_numDOFs + 1);
++	this->_clusterData.h_view().setIntId(this->_numDOFs + 2);
++	this->_clusterData.h_view().setIntAvId(this->_numDOFs + 3);
++	this->_clusterData.h_view().setBasalId(this->_numDOFs + 4);
++	this->_clusterData.h_view().setBasalAvId(this->_numDOFs + 5);
++	this->_numDOFs +=6;
++}
++
++void
++ZrReactionNetwork::computeFluxesPreProcess(ConcentrationsView concentrations,
++	FluxesView fluxes, IndexType gridIndex, double surfaceDepth, double spacing)
++{
++	if (this->_enableLargeCluster) {
++		auto clusterDataMirror = this->getClusterDataMirror();
++
++		// Get the concentrations on the host
++		auto dConcs = Kokkos::subview(concentrations,
++			std::make_pair(
++				clusterDataMirror.voidId(), clusterDataMirror.faulIId() + 1));
++		auto hConcs = create_mirror_view(dConcs);
++		deep_copy(hConcs, dConcs);
++
++		// Compute the average composition of each defect
++		for (int i; i < 3; i++) {
++			auto conc = hConcs(2 * i);
++			auto avComp = hConcs(2 * i + 1) / conc;
++			if (conc == 0.0)
++				avComp = 0.0;
++			// Compute and save the radius from that
++			switch (i) {
++			// Vac
++			case 0:
++				this->_clusterData.h_view().setVacAvRad(util::max(0.0,
++					computeClusterRadius(
++						avComp, i)));
++			// Int
++			case 1:
++				this->_clusterData.h_view().setIntAvRad(util::max(0.0,
++					computeClusterRadius(
++						avComp, i)));
++			// Basal
++			case 2:
++				this->_clusterData.h_view().setBasalAvRad(util::max(0.0,
++					computeClusterRadius(
++						avComp, i)));
++			}
++		}
++	}
++}
++
++void
++ZrReactionNetwork::computePartialsPreProcess(
++	ConcentrationsView concentrations, Kokkos::View<double*> values,
++	IndexType gridIndex, double surfaceDepth, double spacing)
++{
++	if (this->_enableLargeCluster) {
++		auto clusterDataMirror = this->getClusterDataMirror();
++
++		// Get the concentrations on the host
++		auto dConcs = Kokkos::subview(concentrations,
++			std::make_pair(
++				clusterDataMirror.voidId(), clusterDataMirror.faulIId() + 1));
++		auto hConcs = create_mirror_view(dConcs);
++		deep_copy(hConcs, dConcs);
++
++		// Compute the average composition of each defect
++		for (int i; i < 3; i++) {
++			auto conc = hConcs(2 * i);
++			auto avComp = hConcs(2 * i + 1) / conc;
++			if (conc == 0.0)
++				avComp = 0.0;
++			// Compute and save the radius from that
++			switch (i) {
++			// Vac
++			case 0:
++				this->_clusterData.h_view().setVacAvRad(util::max(0.0,
++					computeClusterRadius(
++						avComp, i)));
++			// Int
++			case 1:
++				this->_clusterData.h_view().setIntAvRad(util::max(0.0,
++					computeClusterRadius(
++						avComp, i)));
++			// Basal
++			case 2:
++				this->_clusterData.h_view().setBasalAvRad(util::max(0.0,
++					computeClusterRadius(
++						avComp, i)));
++			}
++		}
++	}
++}
++
++
+ namespace detail
+ {
+ template <typename TTag>
+diff --git a/xolotl/options/src/Options.cpp b/xolotl/options/src/Options.cpp
+index 89c6fb63..aa473f6d 100644
+--- a/xolotl/options/src/Options.cpp
++++ b/xolotl/options/src/Options.cpp
+@@ -455,6 +455,7 @@ Options::setProcesses(const std::string& processList)
+ 	processMap["heterogeneous"] = false;
+ 	processMap["sink"] = false;
+ 	processMap["soret"] = false;
++	processMap["largeCluster"] = false;
+ 	processMap["constant"] = false;
+ 	processMap["noSolve"] = false;
+ 

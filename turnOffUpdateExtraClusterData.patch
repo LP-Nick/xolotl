@@ -1,0 +1,13 @@
+diff --git a/xolotl/core/include/xolotl/core/network/impl/ReactionNetwork.tpp b/xolotl/core/include/xolotl/core/network/impl/ReactionNetwork.tpp
+index d48b2124..b7aa49ea 100644
+--- a/xolotl/core/include/xolotl/core/network/impl/ReactionNetwork.tpp
++++ b/xolotl/core/include/xolotl/core/network/impl/ReactionNetwork.tpp
+@@ -287,7 +287,7 @@ ReactionNetwork<TImpl>::setTemperatures(
+ 		tempsHost(gridTemps.data(), this->_gridSize);
+ 	Kokkos::deep_copy(_clusterData.h_view().temperature, tempsHost);
+ 
+-	asDerived()->updateExtraClusterData(gridTemps, gridDepths);
++	//asDerived()->updateExtraClusterData(gridTemps, gridDepths);
+ 	
+ 	updateDiffusionCoefficients();
+ 

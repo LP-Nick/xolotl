@@ -1,0 +1,46 @@
+diff --git a/xolotl/core/include/xolotl/core/network/impl/ZrReaction.tpp b/xolotl/core/include/xolotl/core/network/impl/ZrReaction.tpp
+index 2123c91c..5873abb6 100644
+--- a/xolotl/core/include/xolotl/core/network/impl/ZrReaction.tpp
++++ b/xolotl/core/include/xolotl/core/network/impl/ZrReaction.tpp
+@@ -309,30 +309,30 @@ ZrDissociationReaction::computeBindingEnergy(double time)
+ 			prod2Comp.isOnAxis(Species::Basal)) */
+ 		{
+ 			if (n < this->_clusterData->transitionSize()) {
+-				be = 1.762 +
++				/*be = 1.762 +
+ 					((5.352 * sqrt(n - 1) + 0.122 * (n - 1) + 0.154 * (n - 1) -
+ 						 5.3) -
+ 						(5.352 * sqrt(n) + 0.122 * n + 0.154 * n -
+-							5.3)); // With basal SFE
+-				// be = 1.762 + ((5.352*sqrt(n-1)+0.122*(n-1)-5.3) -
+-				// (5.352*sqrt(n)+0.122*n-5.3)); //Without basal SFE
++							5.3)); // With basal SFE */
++				be = 1.762 + ((5.352*sqrt(n-1)+0.122*(n-1)-5.3) -
++					(5.352*sqrt(n)+0.122*n-5.3)); //Without basal SFE
+ 			}
+ 			else if (n < 200)
+-				be = 2.03 +
++				/*be = 2.03 +
+ 					2.87 *
+ 						(sqrt(n - 1) * log(1.50 * sqrt(n - 1)) -
+ 							sqrt(n) * log(1.50 * sqrt(n))) -
+-					9.08 * 0.0171; // With SFE
+-			// be = 2.03 + 2.87 * (sqrt(n-1)*log(1.50*sqrt(n-1)) -
+-			// sqrt(n)*log(1.50*sqrt(n))); //Without basal SFE
++					9.08 * 0.0171; // With SFE */
++			be = 2.03 + 2.87 * (sqrt(n-1)*log(1.50*sqrt(n-1)) -
++				sqrt(n)*log(1.50*sqrt(n))); //Without basal SFE
+ 			else
+-				be = 2.03 +
++				/*be = 2.03 +
+ 					3.02 *
+ 						(sqrt(n - 1) * log(1.64 * sqrt(n - 1)) -
+ 							sqrt(n) * log(1.64 * sqrt(n))) -
+-					9.08 * 0.00918; // With SFE
+-			// be = 2.03 + 3.02 * (sqrt(n-1)*log(1.64*sqrt(n-1)) -
+-			// sqrt(n)*log(1.64*sqrt(n))) ; //Without basal SFE
++					9.08 * 0.00918; // With SFE */
++			be = 2.03 + 3.02 * (sqrt(n-1)*log(1.64*sqrt(n-1)) -
++				sqrt(n)*log(1.64*sqrt(n))) ; //Without basal SFE
+ 		}
+ 	}

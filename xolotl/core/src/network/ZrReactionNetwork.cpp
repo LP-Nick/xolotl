@@ -365,9 +365,6 @@ ZrReactionNetwork::updateExtraClusterData(
 				auto radii = calcThermalRadii(alphaD, mD, temp, size, 0);
 				data.extraData.dislocationCaptureRadius(i, 0) = radii[0];
 				data.extraData.dislocationCaptureRadius(i, 1) = radii[1];
-				/*std::cout<<"capture radius for vacancy with size "<<size<<": "<<std::endl;
-				std::cout<<"int capture: "<<radii[0]<<std::endl;
-				std::cout<<"vac capture: "<<radii[1]<<std::endl;*/
 			}
 			
 
@@ -385,9 +382,6 @@ ZrReactionNetwork::updateExtraClusterData(
 					auto radii = calcThermalRadii(alphaD, mD, temp, size, 2);
 					data.extraData.dislocationCaptureRadius(i, 0) = radii[0];
 					data.extraData.dislocationCaptureRadius(i, 1) = radii[1];
-					/*std::cout<<"capture radius for basal with size "<<size<<": "<<std::endl;
-					std::cout<<"int capture: "<<radii[0]<<std::endl;
-					std::cout<<"vac capture: "<<radii[1]<<std::endl;*/
 				}
 			}
 
@@ -399,9 +393,6 @@ ZrReactionNetwork::updateExtraClusterData(
 				auto radii = calcThermalRadii(alphaD, mD, temp, size, 1);
 				data.extraData.dislocationCaptureRadius(i, 0) = radii[0];
 				data.extraData.dislocationCaptureRadius(i, 1) = radii[1];
-				/*std::cout<<"capture radius for interstitial with size "<<size<<": "<<std::endl;
-				std::cout<<"int capture: "<<radii[0]<<std::endl;
-				std::cout<<"vac capture: "<<radii[1]<<std::endl;*/
 				}
 		
 		}); // Goes with parallel_for

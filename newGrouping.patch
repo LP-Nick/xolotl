@@ -1,0 +1,23 @@
+diff --git a/xolotl/core/include/xolotl/core/network/impl/ZrClusterGenerator.tpp b/xolotl/core/include/xolotl/core/network/impl/ZrClusterGenerator.tpp
+index cb14b4cd..3be3ba91 100644
+--- a/xolotl/core/include/xolotl/core/network/impl/ZrClusterGenerator.tpp
++++ b/xolotl/core/include/xolotl/core/network/impl/ZrClusterGenerator.tpp
+@@ -49,15 +49,15 @@ ZrClusterGenerator::refine(const Region& region, BoolArray& result) const
+ 
+ 	if (loV > 0 &&
+ 		region[Species::V].length() <
+-			util::max((double)(_groupingWidth + 1), loV * 2.0e-2))
++			util::max((double)(_groupingWidth + 1), pow(region[Species::V].begin(), 0.75) * 0.5))
+ 		result[0] = false;
+ 	if (loB > 0 &&
+ 		region[Species::Basal].length() <
+-			util::max((double)(_groupingWidth + 1), loB * 2.0e-2))
++			util::max((double)(_groupingWidth + 1), pow(region[Species::Basal].begin(), 0.75) * 0.5))
+ 		result[1] = false;
+ 	if (loI > 0 &&
+ 		region[Species::I].length() <
+-			util::max((double)(_groupingWidth + 1), loI * 2.0e-2))
++			util::max((double)(_groupingWidth + 1), pow(region[Species::I].begin(), 0.75) * 0.5))
+ 		result[2] = false;
+ 
+ 	return true;

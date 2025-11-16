@@ -1,0 +1,14 @@
+diff --git a/xolotl/core/include/xolotl/core/network/impl/ZrReaction.tpp b/xolotl/core/include/xolotl/core/network/impl/ZrReaction.tpp
+index d940d4b2..8e36d6dc 100644
+--- a/xolotl/core/include/xolotl/core/network/impl/ZrReaction.tpp
++++ b/xolotl/core/include/xolotl/core/network/impl/ZrReaction.tpp
+@@ -300,7 +300,8 @@ ZrSinkReaction::computeRate(IndexType gridIndex, double time)
+ 	double dc = cl.getDiffusionCoefficient(gridIndex);
+ 	double anisotropy =
+ 		this->_clusterData->extraData.anisotropyRatio(_reactant, gridIndex);
+-	double dislocationDensity = this->_clusterData->dislocationDensity();
++	//double dislocationDensity = this->_clusterData->dislocationDensity();
++	double dislocationDensity = 5.0e-6;
+ 	double alphaZrASinkStrength = dislocationDensity *
+ 		0.7631579; // fraction of total dislocation density for type A
+ 				   // dislocations from single crystal data (7.25/9.5)

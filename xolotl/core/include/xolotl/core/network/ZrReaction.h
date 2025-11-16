@@ -49,16 +49,6 @@ public:
 		
 		auto numClusters = clusterData.numClusters;
 		
-		std::cout << "num clusters: " << numClusters << std::endl;
-		std::cout << "cluster 0 id: " << cluster0 << std::endl;
-		std::cout << "cluster 1 id: " << cluster1 << std::endl;
-		if (cluster2 != Superclass::invalidIndex)
-			std::cout << "cluster 2 id: " << cluster2 << std::endl;
-		if (cluster3 != Superclass::invalidIndex)
-			std::cout << "cluster 3 id: " << cluster3 << std::endl;
-		
-		
-		
 		// Check if the single size is involved
 		if (cluster0 >= numClusters)
 			isLargeClusterReaction = true;
@@ -68,8 +58,6 @@ public:
 			isLargeClusterReaction = true;
 		if (cluster3 != Superclass::invalidIndex and cluster3 >= numClusters)
 			isLargeClusterReaction = true;
-		
-		std::cout<<"large cluster rxn: " << isLargeClusterReaction << std::endl;
 		
 		
 		//static

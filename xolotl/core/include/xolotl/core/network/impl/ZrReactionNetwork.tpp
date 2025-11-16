@@ -466,7 +466,14 @@ ZrReactionGenerator::addSingleSizeReactions(
 	auto vacId = this->_clusterData.vacId();
 	auto intId = this->_clusterData.intId();
 	auto basalId = this->_clusterData.basalId();
-
+	
+	auto diffusionFactor = this->_clusterData.diffusionFactor;
+	// Check the diffusion factors
+	if (diffusionFactor(i) == 0.0 && diffusionFactor(j) == 0.0){
+		return;
+	}
+	//if (this->getCluster(i) == 143)
+	std::cout<<"largeCluster in addSingleSizeRxns: "<<i<<std::endl;
 	if (i == j) {
 		const auto& clReg = this->getCluster(i).getRegion();
 		Composition lo = clReg.getOrigin();
@@ -499,6 +506,7 @@ ZrReactionGenerator::addSingleSizeReactions(
 	const auto& largestReg = this->getCluster(largestClusterId).getRegion();
 	Composition hiLargest = largestReg.getUpperLimitPoint();
 	auto largestSize = hiLargest[Species::V] - 1; // Don't know which one was saved
+	
 
 	// V_a + V_b -> V
 	if (hi1[Species::V] + hi2[Species::V] - 2 > largestSize) {
@@ -578,8 +586,6 @@ ZrClusterUpdater::updateDiffusionCoefficient(
 			data.extraData.anisotropyRatio(clusterId, gridIndex) =
 				pow(Dc / Da, 1.0 / 6.0);
 			
-			std::cout<< "i"<< lo[Species::I] << "dc: "<<
-				data.diffusionCoefficient(clusterId, gridIndex) << std::endl;
 			return;
 		}
 
@@ -598,8 +604,6 @@ ZrClusterUpdater::updateDiffusionCoefficient(
 			data.extraData.anisotropyRatio(clusterId, gridIndex) =
 				pow(Dc / Da, 1.0 / 6.0);
 			
-			std::cout<< "v"<< lo[Species::V] << "dc: "<<
-				data.diffusionCoefficient(clusterId, gridIndex) << std::endl;
 			return;
 		}
 	}
