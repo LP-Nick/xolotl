@@ -174,6 +174,24 @@ ZrReactionGenerator::operator()(IndexType i, IndexType j, TTag tag) const
 	auto& subpaving = this->getSubpaving();
 	auto previousIndex = subpaving.invalidIndex();
 
+// Get the composition of each cluster
+	const auto& cl1Reg = this->getCluster(i).getRegion();
+	const auto& cl2Reg = this->getCluster(j).getRegion();
+	Composition lo1 = cl1Reg.getOrigin();
+	Composition hi1 = cl1Reg.getUpperLimitPoint();
+	Composition lo2 = cl2Reg.getOrigin();
+	Composition hi2 = cl2Reg.getUpperLimitPoint();
+	
+if (lo1[Species::V] > 0){
+			std::cout<<"diffusion factor for v"<<lo1[Species::V]<<": " << diffusionFactor(i)<<std::endl;
+			std::cout<<std::endl;
+	}
+if (lo2[Species::V] > 0){
+			std::cout<<"diffusion factor for v"<<lo2[Species::V]<<": " << diffusionFactor(j)<<std::endl;
+			std::cout<<std::endl;
+	}
+
+
 	// Check the diffusion factors
 	if (diffusionFactor(i) == 0.0 && diffusionFactor(j) == 0.0) {
 		return;
@@ -184,12 +202,12 @@ ZrReactionGenerator::operator()(IndexType i, IndexType j, TTag tag) const
 		addSingleSizeReactions(i, j, tag);
 	
 	// Get the composition of each cluster
-	const auto& cl1Reg = this->getCluster(i).getRegion();
+	/*const auto& cl1Reg = this->getCluster(i).getRegion();
 	const auto& cl2Reg = this->getCluster(j).getRegion();
 	Composition lo1 = cl1Reg.getOrigin();
 	Composition hi1 = cl1Reg.getUpperLimitPoint();
 	Composition lo2 = cl2Reg.getOrigin();
-	Composition hi2 = cl2Reg.getUpperLimitPoint();
+	Composition hi2 = cl2Reg.getUpperLimitPoint();*/
 
 	// vac + vac = vac
 	if (lo1.isOnAxis(Species::V) && lo2.isOnAxis(Species::V)) {
@@ -468,12 +486,30 @@ ZrReactionGenerator::addSingleSizeReactions(
 	auto basalId = this->_clusterData.basalId();
 	
 	auto diffusionFactor = this->_clusterData.diffusionFactor;
+	
+		// Get the composition of each cluster
+	const auto& cl1Reg = this->getCluster(i).getRegion();
+	const auto& cl2Reg = this->getCluster(j).getRegion();
+	Composition lo1 = cl1Reg.getOrigin();
+	Composition hi1 = cl1Reg.getUpperLimitPoint();
+	Composition lo2 = cl2Reg.getOrigin();
+	Composition hi2 = cl2Reg.getUpperLimitPoint();
+/*	if (lo1[Species::V] > 0){
+			auto largeSize = std::max(lo1[Species::V], lo2[Species::V]);
+			std::cout<<"diffusion factor for v"<<largeSize<<": " << diffusionFactor(i)<<std::endl;
+			std::cout<<std::endl;
+	}
+	if (lo2[Species::V] > 0){
+			auto largeSize = std::max(lo1[Species::V], lo2[Species::V]);
+			std::cout<<"diffusion factor for v"<<largeSize<<": " << diffusionFactor(j)<<std::endl;
+			std::cout<<std::endl;
+	}*/
+	
 	// Check the diffusion factors
 	if (diffusionFactor(i) == 0.0 && diffusionFactor(j) == 0.0){
 		return;
 	}
-	//if (this->getCluster(i) == 143)
-	std::cout<<"largeCluster in addSingleSizeRxns: "<<i<<std::endl;
+	
 	if (i == j) {
 		const auto& clReg = this->getCluster(i).getRegion();
 		Composition lo = clReg.getOrigin();
@@ -494,13 +530,7 @@ ZrReactionGenerator::addSingleSizeReactions(
 		}
 	}
 
-	// Get the composition of each cluster
-	const auto& cl1Reg = this->getCluster(i).getRegion();
-	const auto& cl2Reg = this->getCluster(j).getRegion();
-	Composition lo1 = cl1Reg.getOrigin();
-	Composition hi1 = cl1Reg.getUpperLimitPoint();
-	Composition lo2 = cl2Reg.getOrigin();
-	Composition hi2 = cl2Reg.getUpperLimitPoint();
+	
 
 	// Find the edge of the phase space
 	const auto& largestReg = this->getCluster(largestClusterId).getRegion();

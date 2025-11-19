@@ -234,7 +234,7 @@ ZrProductionReaction::getRateForProduction(IndexType gridIndex)
 		case 0:
 			r0 = this->_clusterData->vacAvRad();
 			//std::cout << "getRateForProduction, large cluster is r0, r0: " << r0 <<std::endl;
-			cl0Reg[Species::V] = {1, 2};
+			cl0Reg[Species::V] = {1001, 1002};
 			rdCl[0][0] = 0.79;
 			rdCl[0][1] = 1.59;
 			break;
@@ -278,7 +278,7 @@ ZrProductionReaction::getRateForProduction(IndexType gridIndex)
 		case 0:
 			r1 = this->_clusterData->vacAvRad();
 			//std::cout << "getRateForProduction, large cluster is r1, r1: " << r1 <<std::endl;
-			cl1Reg[Species::V] = {1, 2};
+			cl1Reg[Species::V] = {1001, 1002};
 			rdCl[1][0] = 0.79;
 			rdCl[1][1] = 1.59;
 			break;
