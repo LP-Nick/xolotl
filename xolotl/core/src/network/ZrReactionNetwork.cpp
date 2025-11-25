@@ -446,16 +446,19 @@ ZrReactionNetwork::addMonitorDataValues(Kokkos::View<const double*> conc,
 			if (this->_enableLargeCluster) {
 				
 				IndexType ssbmId = 0;
+				IndexType ssbmSizeId = 0;
 				
 				switch (id() ) {
 					
 					// Vac
 					case 0:
 						ssbmId = this->_clusterData.h_view().vacId();
+						ssbmSizeId = ssbmId + 1;
 						break;
 						
 					default: 
 						ssbmId = 0;
+						ssbmSizeId = 0;
 						break;
 				}
 				// Compute average numbers
@@ -472,11 +475,13 @@ ZrReactionNetwork::addMonitorDataValues(Kokkos::View<const double*> conc,
 					computeClusterRadius(
 						avComp, 0)); // fix later but 0 is index for large vac in computeClusterRadius
 				
-				totalVals[(4 * id()) + 0] += vConc * fac;
-				totalVals[(4 * id()) + 1] += vConc * avRadius * 2.0 * fac;
+				totalVals[(6 * id()) + 0] += vConc * fac;
+				totalVals[(6 * id()) + 1] += vConc * fac;
+				totalVals[(6 * id()) + 2] += vConc * avRadius * 2.0 * fac;
 				if (avComp > minSizes[id()]) {
-					totalVals[(4 * id()) + 2] += vConc * fac;
-					totalVals[(4 * id()) + 3] += vConc * avRadius * 2.0 * fac;
+					totalVals[(6 * id()) + 3] += vConc * fac;
+					totalVals[(6 * id()) + 4] += vConc * fac;
+					totalVals[(6 * id()) + 5] += vConc * avRadius * 2.0 * fac;
 				}
 		}
 	}

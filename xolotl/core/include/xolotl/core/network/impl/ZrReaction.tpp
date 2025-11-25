@@ -43,30 +43,24 @@ getRate(const TRegion& pairCl0Reg, const TRegion& pairCl1Reg, const double r0,
 	// Determine parameters for cluster 0 based on cluster type and size
 	if (cl0IsV){
 		n0 = lo0[Species::V];
-		std::cout<< "cl0: v" << n0 << std::endl;
 	}
 	else if (lo0.isOnAxis(Species::Basal)){
 		n0 = lo0[Species::Basal];
-		std::cout<< "cl0: b" << n0 << std::endl;
 	}
 	else{
 		n0 = lo0[Species::I];
-		std::cout<< "cl0: i" << n0 << std::endl;
 	}
 	bool cl0IsLoop = (n0 > 9);
 	
 	// Determine parameters for cluster 1 based on cluster type and size
 	if (cl1IsV){
 		n1 = lo1[Species::V];
-		std::cout<< "cl1: v" << n1 << std::endl;
 	}
 	else if (lo1.isOnAxis(Species::Basal)){
 		n1 = lo1[Species::Basal];
-		std::cout<< "cl1: b" << n1 << std::endl;
 	}
 	else{
 		n1 = lo1[Species::I];
-		std::cout<< "cl1: i" << n1 << std::endl;
 	}
 	bool cl1IsLoop = (n1 > 9);
 	
@@ -91,24 +85,6 @@ getRate(const TRegion& pairCl0Reg, const TRegion& pairCl1Reg, const double r0,
 		else
 			Pl = 0.70 * pow(p, -2) + 0.78 * p - 0.47;
 		
-			
-		//std::cout<< "vac loop added radii : " << r0 + r1 + rd <<std::endl;
-		std::cout<< "rateSpherical: " << rateSpherical << std::endl;
-		std::cout<< "rateToroidal: " << rateToroidal << std::endl;
-		std::cout<< "capture efficiency: " << Pl << std::endl;
-		std::cout<< "alpha: " << alpha << std::endl;
-		std::cout<< "dc0: " << dc0 << std::endl;
-		std::cout<< "dc1: " << dc1 << std::endl;
-		//std::cout << "getRate, vac r0: " << r0 <<std::endl;
-		//std::cout<< "getRate, r1: " << r1 << std::endl;
-		//std::cout<< "vac rd: " << rd << std::endl;
-		//std::cout<< "vac size: " << n0 << std::endl;
-		//std::cout<< std::endl;
-		
-		std::cout<<"rate: "<<
-				((1 - alpha) * rateToroidal * Pl + alpha * rateSpherical) *
-			(dc0 + dc1) << std::endl;
-		std::cout<<std::endl;
 		return ((1 - alpha) * rateToroidal * Pl + alpha * rateSpherical) *
 			(dc0 + dc1);
 	}
@@ -134,31 +110,11 @@ getRate(const TRegion& pairCl0Reg, const TRegion& pairCl1Reg, const double r0,
 		else
 			Pl = 0.70 * pow(p, -2) + 0.78 * p - 0.47;
 
-			
-			//std::cout<< "vac loop added radii : " << r0 + r1 + rd <<std::endl;
-			std::cout<< "rateSpherical: " << rateSpherical << std::endl;
-			std::cout<< "rateToroidal: " << rateToroidal << std::endl;
-			std::cout<< "capture efficiency: " << Pl << std::endl;
-			std::cout<< "alpha: " << alpha << std::endl;
-			std::cout<< "dc0: " << dc0 << std::endl;
-			std::cout<< "dc1: " << dc1 << std::endl;
-			//std::cout << "getRate, vac r1: " << r0 <<std::endl;
-			//std::cout<< "getRate, r0: " << r1 << std::endl;
-			//std::cout<< "vac rd: " << rd << std::endl;*/
-			//std::cout<< "vac size: " << n1 << std::endl;
-			//std::cout<< std::endl;
-		
-		std::cout<<"rate: "<<
-				((1 - alpha) * rateToroidal * Pl + alpha * rateSpherical) *
-			(dc0 + dc1) << std::endl;
-		std::cout<<std::endl;
 		return ((1 - alpha) * rateToroidal * Pl + alpha * rateSpherical) *
 			(dc0 + dc1);
 	}
 
 	// None of the clusters are loops (interaction is based on spherical volume)
-	std::cout<< "rate: " << zs * (dc0 + dc1) << std::endl;
-	std::cout << std::endl;
 	return zs * (dc0 + dc1);
 }
 } // namespace zr
@@ -169,11 +125,7 @@ ZrProductionReaction::getRateForProduction(IndexType gridIndex)
 {
 	auto cl0 = this->_clusterData->getCluster(_reactants[0]);
 	auto cl1 = this->_clusterData->getCluster(_reactants[1]);
-	std::cout<<"in getRateForProduction"<<std::endl;
-	std::cout << "cluster 0 id: " << _reactants[0] << std::endl;
-	std::cout << "cluster 1 id: " << _reactants[1] << std::endl;
-	std::cout<<"large cluster rxn: "<<
-		isLargeClusterReaction << std::endl;
+
 	// Create an array with all possible dislocation capture radii
 	// rdCl = {(rdI for cl0, rdV for cl0), (rdI for cl1, rdV for cl1)}
 	double rdCl[2][2] = {{0.0, 0.0}, {0.0, 0.0}};
@@ -183,14 +135,9 @@ ZrProductionReaction::getRateForProduction(IndexType gridIndex)
 		double r0 = cl0.getReactionRadius();
 		double r1 = cl1.getReactionRadius();
 
-		//std::cout << "getRateForProduction, not large cluster, r0: " << r0 <<std::endl;
-		//std::cout << "getRateForProduction, not large cluster, r1: " << r1 <<std::endl;
-
 		double dc0 = cl0.getDiffusionCoefficient(gridIndex);
 		double dc1 = cl1.getDiffusionCoefficient(gridIndex);
-		
-		std::cout<<"getRateForProduction dc0: "<< dc0 << std::endl;
-		std::cout<<"getRateForProduction dc1: "<< dc1 << std::endl;
+
 		
 		// Determine which cluster is mobile and retrieve its anisotropy ratio
 		double p = 0;
@@ -223,9 +170,6 @@ ZrProductionReaction::getRateForProduction(IndexType gridIndex)
 	double r0 = 0.0, r1 = 0.0, dc0 = 0.0, dc1 = 0.0, p=0.0;
 	Region cl0Reg = dummyRegion, cl1Reg = dummyRegion;
 	auto numClusters = this->_clusterData->numClusters;
-	//std::cout << "reactant 0 id: " << _reactants[0] <<std::endl;
-	//std::cout << "reactant 1 id: " << _reactants[1] <<std::endl;
-	//std::cout << "num clusters: " << numClusters <<std::endl;
 	
 	if (this->_reactants[0] >= numClusters){
 		auto shift = (this->_reactants[0] - numClusters)/2;
@@ -233,7 +177,6 @@ ZrProductionReaction::getRateForProduction(IndexType gridIndex)
 		// Vac
 		case 0:
 			r0 = this->_clusterData->vacAvRad();
-			//std::cout << "getRateForProduction, large cluster is r0, r0: " << r0 <<std::endl;
 			cl0Reg[Species::V] = {1001, 1002};
 			rdCl[0][0] = 0.79;
 			rdCl[0][1] = 1.59;
@@ -258,7 +201,6 @@ ZrProductionReaction::getRateForProduction(IndexType gridIndex)
 		auto cl0 = this->_clusterData->getCluster(_reactants[0]);
 		r0 = cl0.getReactionRadius();
 		dc0 = cl0.getDiffusionCoefficient(gridIndex);
-		//std::cout << "getRateForProduction, large cluster is r1, r0: " << r0 <<std::endl;
 		//anisotropy ratio
 		//double p = 0;
 		if (dc0 > 0)
@@ -277,7 +219,6 @@ ZrProductionReaction::getRateForProduction(IndexType gridIndex)
 		// Vac
 		case 0:
 			r1 = this->_clusterData->vacAvRad();
-			//std::cout << "getRateForProduction, large cluster is r1, r1: " << r1 <<std::endl;
 			cl1Reg[Species::V] = {1001, 1002};
 			rdCl[1][0] = 0.79;
 			rdCl[1][1] = 1.59;
@@ -303,7 +244,6 @@ ZrProductionReaction::getRateForProduction(IndexType gridIndex)
 		auto cl1 = this->_clusterData->getCluster(_reactants[1]);
 		r1 = cl1.getReactionRadius();
 		dc1 = cl1.getDiffusionCoefficient(gridIndex);
-		//std::cout << "getRateForProduction, large cluster is r0, r1: " << r1 <<std::endl;
 		//anisotropy ratio
 		//double p = 0;
 		if (dc1 > 0)
@@ -316,11 +256,6 @@ ZrProductionReaction::getRateForProduction(IndexType gridIndex)
 			_reactants[1], 1);
 	}
 	
-	std::cout<<"large getRateForProduction dc0: "<< dc0 << std::endl;
-	std::cout<<"large getRateForProduction dc1: "<< dc1 << std::endl;
-	//std::cout << "getRateForProduction final check" << std::endl;
-	//std::cout << "r0: " << r0 << std::endl;
-	//std::cout << "r1: " << r1 << std::endl;
 	return zr::getRate(cl0Reg, cl1Reg, r0, r1, dc0, dc1, rdCl,
 			p, this->_clusterData->transitionSize());
 }
@@ -356,60 +291,6 @@ ZrProductionReaction::computeFlux(
 	// The rate need to be computed each time because it depends on the current
 	// large cluster size
 	auto rate = getRateForProduction(gridIndex);
-	std::cout << "computeFlux rate: " << rate <<std::endl;
-	std::cout << std::endl;
-	
-	/*auto cl0 = this->_clusterData->getCluster(_reactants[0]);
-	auto cl1 = this->_clusterData->getCluster(_reactants[1]);
-	
-	using Species = typename TRegion::EnumIndex;
-	const TRegion& pairCl0Reg = cl0.getRegion();
-	const TRegion& pairCl1Reg = cl1.getRegion();
-	
-	
-	xolotl::core::network::detail::Composition<typename TRegion::VectorType,
-		Species>
-		lo0 = pairCl0Reg.getOrigin();
-	
-	xolotl::core::network::detail::Composition<typename TRegion::VectorType,
-		Species>
-		lo1 = pairCl1Reg.getOrigin();
-	
-	bool cl0IsV = lo0.isOnAxis(Species::V);
-	bool cl1IsV = lo1.isOnAxis(Species::V);
-	
-		std::cout << "reaction rate between clusters "; 
-	
-	if (cl0IsV){
-		n0 = lo0[Species::V];
-		std::cout<< "v" << n0;
-	}
-	else if (lo0.isOnAxis(Species::Basal)){
-		n0 = lo0[Species::Basal];
-		std::cout<< "b" << n0;
-	}
-	else {
-		n0 = lo0[Species::I];
-		std::cout<< "i" << n0;
-	}
-	cl0 << " and " 
-	
-	if (cl1IsV){
-		n1 = lo1[Species::V];
-		std::cout<< "v" << n1;
-	}
-	else if (lo1.isOnAxis(Species::Basal)){
-		n1 = lo1[Species::Basal];
-		std::cout<< "b" << n1;
-	}
-	else {
-		n1 = lo1[Species::I];
-		std::cout<< "i" << n1;
-	}
-		std::cout << ": " << rate <<std::endl;*/
-	
-
-	
 	constexpr auto speciesRangeNoI = NetworkType::getSpeciesRangeNoI();
 	auto numClusters = this->_clusterData->numClusters;
 	auto vacId = this->_clusterData->vacId();
@@ -790,8 +671,6 @@ ZrDissociationReaction::getRateForProduction(IndexType gridIndex)
 	double dc0 = cl0.getDiffusionCoefficient(gridIndex);
 	double dc1 = cl1.getDiffusionCoefficient(gridIndex);
 
-	std::cout<<"dissoc getRateForProduction dc0: "<< dc0 << std::endl;
-	std::cout<<"dissoc getRateForProduction dc1: "<< dc1 << std::endl;
 
 	// Determine which cluster is mobile and retrieve its anisotropy ratio
 	double p = 0;

@@ -131,6 +131,15 @@ public:
 	double
 	computeClusterRadius(double amount, int species)
 	{
+		//Find the edge of the phase space
+		const auto& largestReg = this->getCluster(largestClusterId).getRegion();
+		Composition hiLargest = largestReg.getUpperLimitPoint();
+		double largestSize = hiLargest[Species::V] + hiLargest[Species::I] +
+													hiLargest[Species::Basal] - 3; //dont know which one was saved
+		amount = util::max(amount, largestSize);
+		std::cout<<"largest size: "<<largestSize<<std::endl;
+		std::cout<<"amount: "<<amount<<std::endl;
+		//std::cout<<std::endl;
 		if (species == 0){
 			//Vac case
 			return pow(amount+1, 1/2) * pow(3.23*5.17/(2* ::xolotl::core::pi), 1.0/2.0) * 1.118 / 10;
