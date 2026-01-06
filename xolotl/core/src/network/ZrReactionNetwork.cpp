@@ -469,18 +469,18 @@ ZrReactionNetwork::addMonitorDataValues(Kokkos::View<const double*> conc,
 					if (vConc > 1.0e-16)
 						avComp = conc(ssbmId+1)/vConc;
 				}
-				
+
 				// Add the single size data for large vac
 				auto avRadius = util::max(0.0,
 					computeClusterRadius(
 						avComp, 0)); // fix later but 0 is index for large vac in computeClusterRadius
 				
 				totalVals[(6 * id()) + 0] += vConc * fac;
-				totalVals[(6 * id()) + 1] += vConc * fac;
+				totalVals[(6 * id()) + 1] += vConc * avComp * fac;
 				totalVals[(6 * id()) + 2] += vConc * avRadius * 2.0 * fac;
 				if (avComp > minSizes[id()]) {
 					totalVals[(6 * id()) + 3] += vConc * fac;
-					totalVals[(6 * id()) + 4] += vConc * fac;
+					totalVals[(6 * id()) + 4] += vConc * avComp * fac;
 					totalVals[(6 * id()) + 5] += vConc * avRadius * 2.0 * fac;
 				}
 		}

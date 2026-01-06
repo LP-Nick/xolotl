@@ -57,9 +57,6 @@ ZrReactionNetwork::computeFluxesPreProcess(ConcentrationsView concentrations,
 				this->_clusterData.h_view().setVacAvRad(util::max(0.0,
 					computeClusterRadius(
 						avComp, i)));
-				std::cout<<"radius saved in computeFluxesPreprocess: "<<
-				util::max(0.0,computeClusterRadius(avComp, i)) << std::endl;
-						std::cout<<std::endl;
 				break;
 			// Int
 			case 1:
@@ -497,10 +494,10 @@ ZrReactionGenerator::addSingleSizeReactions(
 			this->addProductionReaction(tag, {i, vacId, vacId});
 		}
 		// I case
-		else if (lo.isOnAxis(Species::I)) {
+		/*else if (lo.isOnAxis(Species::I)) {
 			// I_k + I_L -> I_L
 			this->addProductionReaction(tag, {i, vacId, vacId});
-		}
+		}*/
 	}
 
 	
@@ -508,8 +505,9 @@ ZrReactionGenerator::addSingleSizeReactions(
 	// Find the edge of the phase space
 	const auto& largestReg = this->getCluster(largestClusterId).getRegion();
 	Composition hiLargest = largestReg.getUpperLimitPoint();
-	auto largestSize = hiLargest[Species::V] - 1; // Don't know which one was saved
-		
+	double largestSize = hiLargest[Species::V] + hiLargest[Species::I] +
+												hiLargest[Species::Basal] - 3; //dont know which one was saved
+												
 	// Get the composition of each cluster
 	const auto& cl1Reg = this->getCluster(i).getRegion();
 	const auto& cl2Reg = this->getCluster(j).getRegion();

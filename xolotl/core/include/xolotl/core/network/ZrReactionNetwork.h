@@ -137,20 +137,17 @@ public:
 		double largestSize = hiLargest[Species::V] + hiLargest[Species::I] +
 													hiLargest[Species::Basal] - 3; //dont know which one was saved
 		amount = util::max(amount, largestSize);
-		std::cout<<"largest size: "<<largestSize<<std::endl;
-		std::cout<<"amount: "<<amount<<std::endl;
-		//std::cout<<std::endl;
 		if (species == 0){
 			//Vac case
-			return pow(amount+1, 1/2) * pow(3.23*5.17/(2* ::xolotl::core::pi), 1.0/2.0) * 1.118 / 10;
+			return pow(amount+1.0, 1.0/2.0) * pow(3.23*5.17/(2.0* ::xolotl::core::pi), 1.0/2.0) * 1.118 / 10.0;
 		}
 		if (species == 1){
 			//Int case
-			return pow(amount+1, 1/2) * pow(3.23*5.17/(2* ::xolotl::core::pi), 1.0/2.0) * 1.026 / 10;
+			return pow(amount+1.0, 1.0/2.0) * pow(3.23*5.17/(2.0* ::xolotl::core::pi), 1.0/2.0) * 1.026 / 10.0;
 		}
 		if (species == 2){
 			//Basal case
-			return pow(amount+1, 1/2) * 3.23 * pow(pow(3, 1/2)/(2* ::xolotl::core::pi), 1.0/2.0) / 10;
+			return pow(amount+1.0, 1.0/2.0) * 3.23 * pow(pow(3.0, 1.0/2.0)/(2.0* ::xolotl::core::pi), 1.0/2.0) / 10.0;
 		}
 	}
 public:

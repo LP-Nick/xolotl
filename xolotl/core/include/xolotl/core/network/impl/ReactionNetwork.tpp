@@ -785,9 +785,7 @@ ReactionNetwork<TImpl>::getTableFour(ConcentrationsView concentrations,
 	Kokkos::fence();
 	for (auto i = 0; i < rates.size(); i++) {
 		for (auto j = 0; j < rates[i].size(); j++) {
-			// std::cout << rates[i][j] << " ";
 		}
-		// std::cout << std::endl;
 	}
 	return rates;
 }
@@ -1637,7 +1635,7 @@ ReactionNetwork<TImpl>::updateOutgoingDiffFluxes(double* gridPointSolution,
 			size += comp[type];
 		}
 		double coef = cluster.getDiffusionCoefficient(gridIndex);
-		std::cout<<"dc for size: "<<size<<std::endl;
+		
 		// Compute the flux
 		double newFlux = (double)size * factor * coef * conc;
 
